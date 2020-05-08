@@ -1,0 +1,8 @@
+*.log
+*.txt
+cache/
+jsonLog/
+sound-wav/
+star.json
+seed.json
+UI.json

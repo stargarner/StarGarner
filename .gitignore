@@ -1,0 +1,13 @@
+*/*.csproj.user
+*/Properties/
+*/bin/
+*/obj/
+.vs/
+
+*.zip
+StarGarner.log
+UI.json
+seed.json
+star.json
+cache/
+jsonLog/

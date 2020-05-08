@@ -1,0 +1,163 @@
+﻿<Window
+    x:Class="StarGarner.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:wpf="clr-namespace:CefSharp.Wpf;assembly=CefSharp.Wpf"
+    Title="StarGarner"
+    Width="1024"
+    Height="800"
+    MinWidth="1024"
+    MinHeight="320"
+    mc:Ignorable="d">
+    <DockPanel LastChildFill="True">
+        <StackPanel DockPanel.Dock="Top">
+
+            <Grid Margin="4,4,4,4">
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <CheckBox
+                    x:Name="cbResponseLog"
+                    Grid.Column="0"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    VerticalContentAlignment="Center"
+                    x:FieldModifier="private"
+                    Content="API応答をファイルに保存" />
+
+                <Label
+                    Grid.Column="1"
+                    Margin="20,0,0,0"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    VerticalContentAlignment="Center"
+                    Content="配信開始時刻と3周目までの分" />
+                <DockPanel
+                    Grid.Column="2"
+                    LastChildFill="True">
+                    <Label
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Stretch"
+                        HorizontalContentAlignment="Center"
+                        VerticalContentAlignment="Center"
+                        Content="星"
+                        DockPanel.Dock="Left" />
+                    <TextBox
+                        x:Name="tbStartTimeStar"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        HorizontalContentAlignment="Left"
+                        VerticalContentAlignment="Center"
+                        x:FieldModifier="private"
+                        DockPanel.Dock="Right"
+                        FontSize="13"
+                        Text="例 20:30+15" />
+                </DockPanel>
+                <DockPanel
+                    Grid.Column="3"
+                    Margin="4,0,0,0"
+                    LastChildFill="True">
+                    <Label
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Stretch"
+                        HorizontalContentAlignment="Center"
+                        VerticalContentAlignment="Center"
+                        Content="種"
+                        DockPanel.Dock="Left"
+                        FontFamily="Yu Gothic Medium" />
+                    <TextBox
+                        x:Name="tbStartTimeSeed"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        HorizontalContentAlignment="Left"
+                        VerticalContentAlignment="Center"
+                        x:FieldModifier="private"
+                        DockPanel.Dock="Right"
+                        FontFamily="Yu Gothic Medium"
+                        FontSize="13"
+                        Text="例 0:30+15, 3:30+15, 6:30+15, 9:30+15, 12:30+15, 15:30+15, 18:30+15, 21:30+15" />
+                </DockPanel>
+            </Grid>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel
+                    Grid.Column="0"
+                    VerticalAlignment="Bottom">
+                    <TextBlock
+                        x:Name="tbStatus"
+                        Height="Auto"
+                        x:FieldModifier="private"
+                        Background="#FFE6FF9C"
+                        FontFamily="Yu Gothic Medium"
+                        FontSize="13"
+                        Text="初期化中"
+                        TextWrapping="Wrap"
+                        Visibility="Collapsed" />
+                    <TextBlock
+                        x:Name="tbWaitReason"
+                        Height="Auto"
+                        x:FieldModifier="private"
+                        Background="#FFFFF69C"
+                        FontFamily="Yu Gothic Medium"
+                        FontSize="13"
+                        TextWrapping="Wrap"
+                        Visibility="Collapsed" />
+                    <TextBlock
+                        x:Name="tbOpenReason"
+                        Height="Auto"
+                        x:FieldModifier="private"
+                        Background="#FFFFD99C"
+                        FontFamily="Yu Gothic Medium"
+                        FontSize="13"
+                        TextWrapping="Wrap"
+                        Visibility="Collapsed" />
+                    <TextBlock
+                        x:Name="tbCloseReason"
+                        Height="Auto"
+                        x:FieldModifier="private"
+                        Background="#FFFFC49C"
+                        FontFamily="Yu Gothic Medium"
+                        FontSize="13"
+                        TextWrapping="Wrap"
+                        Visibility="Collapsed" />
+                </StackPanel>
+                <TextBlock
+                    x:Name="tbHistoryStar"
+                    Grid.Column="1"
+                    Width="250"
+                    x:FieldModifier="private"
+                    Background="#FFB5FFF2"
+                    FontFamily="Yu Gothic Medium"
+                    FontSize="13"
+                    TextWrapping="Wrap" />
+                <TextBlock
+                    x:Name="tbHistorySeed"
+                    Grid.Column="2"
+                    Width="250"
+                    x:FieldModifier="private"
+                    Background="#FF9DFDFF"
+                    FontFamily="Yu Gothic Medium"
+                    FontSize="13"
+                    TextWrapping="Wrap" />
+            </Grid>
+        </StackPanel>
+
+        <wpf:ChromiumWebBrowser
+            x:Name="cefBrowser"
+            x:FieldModifier="private"
+            DockPanel.Dock="Bottom" />
+    </DockPanel>
+</Window>

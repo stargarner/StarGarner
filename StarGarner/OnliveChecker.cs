@@ -1,0 +1,182 @@
+﻿using Newtonsoft.Json.Linq;
+using System;
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Threading.Tasks;
+
+namespace StarGarner {
+    // onlive room list
+    class OnliveChecker {
+        public volatile List<Room> starRooms = new List<Room>();
+        public volatile List<Room> seedRooms = new List<Room>();
+
+        private static readonly HttpClient client = new HttpClient();
+
+        private readonly MainWindow window;
+        internal volatile String? cookie = null;
+
+        public OnliveChecker(MainWindow window) {
+            this.window = window;
+            client.DefaultRequestHeaders.Add( "User-Agent", Config.userAgent );
+        }
+
+        //######################################################
+        // ギフト所持数のチェック
+
+        private Int64 lastGiftStart = 0L;
+        private Task? lastGiftTask = null;
+
+        private async Task checkGiftCount(List<Room> rooms, String itemName) {
+            try {
+                if (rooms == null || rooms.Count == 0 || cookie == null || window.isLogin != 1)
+                    return;
+
+                var tryCount = 0;
+
+                foreach (var room in rooms) {
+
+                    // 未来の番組は参照しない
+                    var now = UnixTime.now;
+                    if (room.startedAt > now)
+                        continue;
+
+                    var url = $"{Config.URL_TOP}api/live/current_user?room_id={ room.roomId }&_={UnixTime.now / 1000L}";
+                    var request = new HttpRequestMessage( HttpMethod.Get, url );
+                    request.Headers.Add( "ContentType", "application/json" );
+                    request.Headers.Add( "Cookie", cookie );
+                    var response = await client.SendAsync( request ).ConfigureAwait( false );
+
+                    // レスポンスを受け取った時刻
+                    now = UnixTime.now;
+                    var content = await response.Content.ReadAsStringAsync().ConfigureAwait( false );
+                    MyResourceRequestHandler.responceLog( UnixTime.now, url, content );
+                    var list = MyResourceRequestHandler.handleCurrentUser( window, now, url, content, fromChecker: true );
+                    if (list == null) {
+                        // 配信してなかった…
+                        Log.e( $"OnliveChecker.checkGiftCount: {itemName} gift list is null! (parse error)" );
+                        break;
+                    } else if (list.Count == 0) {
+                        // 配信してなかった…
+                        Log.e( $"OnliveChecker.checkGiftCount: {itemName} gift list is empty! (not in live) retry other room…" );
+                        // 他の部屋でリトライしたい
+                    } else {
+                        break;
+                    }
+
+                    // 一定回数以上のリトライは行わない
+                    if (++tryCount >= 2) {
+                        Log.e( $"OnliveChecker.checkGiftCount: {itemName} too many retry." );
+                        break;
+                    }
+                    await Task.Delay( 3000 );
+                    continue;
+                }
+            } catch (Exception ex) {
+                Log.e( ex, "checkGiftCount {itemName} failed." );
+            }
+        }
+
+        public void runGifCount() {
+            lock (this) {
+                if (cookie == null || starRooms == null || seedRooms == null || window.isLogin != 1)
+                    return;
+
+                if (lastGiftTask != null && !lastGiftTask.IsCompleted)
+                    return;
+
+                var now = UnixTime.now;
+                if (now - lastGiftStart < Config.onLiveCheckGiftInterval)
+                    return;
+                lastGiftStart = now;
+
+                lastGiftTask = Task.Run( async () => {
+                    await checkGiftCount( starRooms, "星" );
+                    await Task.Delay( 2000 );
+                    await checkGiftCount( seedRooms, "種" );
+                } );
+            }
+        }
+
+        //######################################################
+        // オンライブ部屋のチェック
+
+        private Int64 lastOnLiveStart = 0L;
+        private Task? lastOnLiveTask = null;
+
+        private async Task checkOnLive() {
+            try {
+                var now = UnixTime.now;
+                var url = $"{Config.URL_TOP}api/live/onlives?skip_serial_code_live=1&_={UnixTime.now / 1000L}";
+                var request = new HttpRequestMessage( HttpMethod.Get, url );
+                request.Headers.Add( "ContentType", "application/json" );
+                var response = await client.SendAsync( request ).ConfigureAwait( false );
+                now = UnixTime.now;
+                var content = await response.Content.ReadAsStringAsync().ConfigureAwait( false );
+                var tmpStarRooms = new Dictionary<String, Room>();
+                var tmpSeedRooms = new Dictionary<String, Room>();
+
+                foreach (JObject genre in JToken.Parse( content ).Value<JArray>( "onlives" )) {
+                    foreach (JObject live in genre.Value<JArray>( "lives" )) {
+                        var roomId = live.Value<Int64>( "room_id" );
+                        var startedAt = live.Value<Int64>( "started_at" );
+                        var roomUrlKey = live.Value<String>( "room_url_key" );
+                        var officialLevel = live.Value<Int32>( "official_lv" );
+
+                        if (startedAt > now || roomUrlKey == null)
+                            continue;
+
+                        if (officialLevel == 0) {
+                            tmpSeedRooms[ roomUrlKey ] = new Room( roomId, roomUrlKey, true, startedAt );
+                        } else {
+                            tmpStarRooms[ roomUrlKey ] = new Room( roomId, roomUrlKey, false, startedAt );
+                        }
+                    }
+                }
+                Log.d( $"onLiveChecker: starRoom={tmpStarRooms.Count},seedRoom={tmpSeedRooms.Count}" );
+
+                static List<Room> mapToList(Dictionary<String, Room> map) {
+                    var dst = new List<Room>();
+                    dst.AddRange( map.Values );
+                    dst.Sort();
+                    return dst;
+                }
+
+                this.starRooms = mapToList( tmpStarRooms );
+                this.seedRooms = mapToList( tmpSeedRooms );
+
+                runGifCount();
+
+            } catch (Exception ex) {
+                Log.e( ex, "load failed." );
+            }
+        }
+
+        private void runOnLive() {
+            lock (this) {
+                if (lastOnLiveTask != null && !lastOnLiveTask.IsCompleted)
+                    return;
+
+                var now = UnixTime.now;
+                if (now - lastOnLiveStart < Config.onLiveCheckInterval)
+                    return;
+
+                lastOnLiveStart = now;
+                lastOnLiveTask = Task.Run( async () => await checkOnLive() );
+            }
+        }
+
+        //######################################################
+
+        // タイマーから定期的に呼ばれる
+        internal void run() {
+            runOnLive();
+            runGifCount();
+        }
+
+        // ブラウザイベントから呼ばれる
+        internal void setCookie(String cookie) {
+            this.cookie = cookie;
+            runGifCount();
+        }
+    }
+}
