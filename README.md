@@ -24,7 +24,8 @@
 - Windows 10 64bit のPCを用意します。
 - .NET Core 3.1 Desktop Runtime (v3.1.3) (Windows x64) をインストールします。
 https://dotnet.microsoft.com/download/dotnet-core/thank-you/runtime-desktop-3.1.3-windows-x64-installer
-- StarGarnerフォルダを作ってzipファイルの中身を展開します。
+- StarGarnwerのリリースページ https://github.com/stargarner/StarGarner/releases から StarGarner-YYYYMMDDHHMMSS.zip をダウンロードします。
+- PCのドライブのどこかにStarGarnerフォルダを作って、上記zipファイルの中身を展開します。
 - 展開したファイルから StarGarner.exe を探して起動します。
 
 ## ログイン
