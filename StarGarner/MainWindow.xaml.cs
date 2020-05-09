@@ -175,11 +175,12 @@ namespace StarGarner {
                     var rv = envList[ 0 ].openRoom();
                     if (rv <= 0L) {
                         return; // 部屋を開いた時は後者の部屋は開かない
-                    } else if (rv < Config.remainTimeSkipSeedStart) {
-                        statusB.add( $"{envList[ 0 ].garner.itemName}の待機時間が残り少ないので{envList[ 1 ].garner.itemName}の状況確認は行いません。" );
-                        return; // 待機時間が短いので後者の部屋は開かない
-                    } else {
-                        envList[ 1 ].openRoom();
+                    } else if (envList[ 1 ].remainStartRoom <= 0L) {
+                        if (rv < Config.remainTimeSkipSeedStart) {
+                            statusB.add( $"{envList[ 0 ].garner.itemName}の待機時間が残り少ないので{envList[ 1 ].garner.itemName}の部屋を開きません。" );
+                        } else {
+                            envList[ 1 ].openRoom();
+                        }
                     }
                 } else {
                     var garner = garnerFor( room );
