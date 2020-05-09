@@ -3,11 +3,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using System.Windows.Documents;
 
 namespace StarGarner {
 
     // garner for star or seed.
-    internal class Garner {
+    public class Garner {
         // 星 or 種
         internal readonly Boolean isSeed;
         internal readonly String itemName;
@@ -36,16 +37,18 @@ namespace StarGarner {
         internal Int64 lastPlayLiveStart;
         internal Int64 lastPlayThirdLap;
 
+        internal String soundActor;
+
         // データをファイルに保存する
-        private void save()
+        internal void save()
             => new JObject {
                 { Config.KEY_EXPIRE_EXCEED, expireExceed.ToString() },
                 { Config.KEY_HISTORY, giftHistory.encodeJson() },
                 { Config.KEY_LAST_PLAY_HISTORY_CLEAR, lastPlayHistoryClear.ToString() },
                 { Config.KEY_LAST_PLAY_LIVE_START, lastPlayLiveStart.ToString() },
                 { Config.KEY_LAST_PLAY_THIRD_LAP, lastPlayThirdLap.ToString() },
+                { Config.KEY_SOUND_ACTOR, soundActor },
             }.saveTo( jsonFile );
-
 
         // 初期化
         internal Garner(Boolean isSeed) {
@@ -53,6 +56,7 @@ namespace StarGarner {
             this.itemName = isSeed ? "種" : "星";
             this.itemNameEn = isSeed ? "seed" : "star";
             this.jsonFile = $"{itemNameEn}.json";
+            this.soundActor = isSeed ? "akane" : "sora";
             this.giftHistory = new GiftHistory( itemName );
             this.giftCounts = new GiftCounts( itemName );
 
@@ -72,6 +76,10 @@ namespace StarGarner {
                             return Int64.Parse( sv );
                         return 0L;
                     }
+
+                    var sv = root.Value<String?>( Config.KEY_SOUND_ACTOR );
+                    if (sv != null && sv.Length > 0)
+                        soundActor = sv;
 
                     expireExceed = parseTime( Config.KEY_EXPIRE_EXCEED );
                     lastPlayHistoryClear = parseTime( Config.KEY_LAST_PLAY_HISTORY_CLEAR );
@@ -180,7 +188,16 @@ namespace StarGarner {
 
             var sc = new StatusCollection();
             sc.addRun( $"{itemName} 所持数 {giftCounts.sumInTime( now )?.ToString() ?? "不明"} " );
-            giftHistory.addTo( sc, hasExceed );
+            giftHistory.addCountTo( sc, hasExceed );
+            /*
+                        var hyperLink = new Hyperlink() {
+                            NavigateUri = new Uri( $"stargarner://{itemNameEn}/settings" )
+                        };
+                        hyperLink.Inlines.Add( "設定" );
+                        hyperLink.RequestNavigate += (sender, e) => window.openSetting(this);
+                        sc.addLink( hyperLink );
+                        */
+            giftHistory.addTo( sc );
 
 
             var eventList = new List<EventTime>();

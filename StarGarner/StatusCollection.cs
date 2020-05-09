@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Security.Cryptography.Xml;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -28,6 +29,7 @@ namespace StarGarner {
                 } );
             }
         }
+        public void addLink(Hyperlink link) => list.Add( link );
 
         public void add(String line, Double? fontSize = null) {
             foreach (var item in list) {
@@ -47,7 +49,7 @@ namespace StarGarner {
                 list.Add( new Run() { Text = "\n" } );
             list.Add( new Run() { Text = line } );
             list.Add( new Run() { Text = " " } );
-            list.Add( link );
+            addLink( link );
         }
 
         public void setTo(TextBlock tb) {

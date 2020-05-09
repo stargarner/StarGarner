@@ -35,10 +35,16 @@ namespace StarGarner {
             }
         }
 
-        private static String getSoundFile(Boolean isSeed, String file) {
-            var who = isSeed ? "akane" : "sora";
-            return $"{soundDir}/{who}-{file}";
-        }
+        public static readonly List<String> actors = new List<String>() {
+            "none","akane","aoi","sora","yukari"
+        };
+
+        private static readonly HashSet<String> actorsMap = actors.ToHashSet();
+
+        private static String? getSoundFile(String actorName, String file)
+            => actorName == "none" || !actorsMap.Contains( actorName )
+            ? null
+            : $"{soundDir}/{actorName}-{file}";
 
         public class PlayingInfo : IDisposable {
             AudioFileReader? reader;
@@ -86,8 +92,10 @@ namespace StarGarner {
 
         private readonly Dictionary<String, PlayingInfo> playerMap = new Dictionary<String, PlayingInfo>();
 
-        public void stop(Boolean isSeed, String file) {
-            var fullPath = getSoundFile( isSeed, file );
+        public void stop(String actorName, String file) {
+            var fullPath = getSoundFile( actorName, file );
+            if (fullPath == null)
+                return;
             try {
                 lock (playerMap) {
                     playerMap.TryGetValue( fullPath, out var p );
@@ -101,9 +109,13 @@ namespace StarGarner {
             }
         }
 
-        public void play(Boolean isSeed, String file) {
-            stop( isSeed, file );
-            var fullPath = getSoundFile( isSeed, file );
+        public void play(String actorName, String file) {
+            stop( actorName, file );
+
+            var fullPath = getSoundFile( actorName, file );
+            if (fullPath == null)
+                return;
+
             lock (playerMap) {
                 try {
                     playerMap[ fullPath ] = new PlayingInfo( fullPath );
@@ -113,8 +125,11 @@ namespace StarGarner {
             }
         }
 
-        public Boolean isPlaying(Boolean isSeed, String file) {
-            var fullPath = getSoundFile( isSeed, file );
+        public Boolean isPlaying(String actorName, String file) {
+            var fullPath = getSoundFile( actorName, file );
+            if (fullPath == null)
+                return false;
+
             lock (playerMap) {
                 playerMap.TryGetValue( fullPath, out var p );
                 return p?.isPlaying() ?? false;

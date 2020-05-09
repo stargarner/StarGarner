@@ -94,7 +94,7 @@ namespace StarGarner {
             // 制限が解除された時に音を出す
             var cleared = remainExpireExceed < Config.waitBeforeGift && remainExpectedReset < Config.waitBeforeGift;
             if (garner.willPlayHistoryClear( now, cleared )) {
-                window.notificationSound.play( garner.isSeed, NotificationSound.exceedReset );
+                window.notificationSound.play( garner.soundActor, NotificationSound.exceedReset );
             }
 
             var situation = "?";
@@ -213,7 +213,7 @@ namespace StarGarner {
                     situationRemain = null;
 
                     if (garner.willPlayThirdLap( st!.time ))
-                        window.notificationSound.play( garner.isSeed, NotificationSound.thirdLap );
+                        window.notificationSound.play( garner.soundActor, NotificationSound.thirdLap );
 
                     // 次の周が近いなら星が余ってても取らないとタイミングが狂う
                     // 次の配信まで余裕があるのなら、星が余ってれば初回取得しない
@@ -234,7 +234,7 @@ namespace StarGarner {
                     situationRemain = remainThirdLap;
 
                     if (garner.willPlayLiveStart( st.time ))
-                        window.notificationSound.play( garner.isSeed, NotificationSound.liveStart );
+                        window.notificationSound.play( garner.soundActor, NotificationSound.liveStart );
 
                     return normalGet( "適当に待機します", maxGiftCount: 450 );
 

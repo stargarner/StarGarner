@@ -73,6 +73,7 @@ namespace StarGarner {
         // garner設定保存キー
         internal const String KEY_EXPIRE_EXCEED = "expireExceed";
         internal const String KEY_HISTORY = "history2";
+        internal const String KEY_SOUND_ACTOR= "soundActor";
         internal const String KEY_TIME = "time";
         internal const String KEY_COUNT = "count";
         internal const String KEY_LAST_PLAY_LIVE_START= "lastPlayLiveStart";

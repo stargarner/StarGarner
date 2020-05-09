@@ -47,11 +47,14 @@ namespace StarGarner {
         public Int32 count() => list.Count;
 
         // 取得履歴をStatusCollectionに追加する
-        public void addTo(StatusCollection sc, Boolean hasExceed) {
+        public void addCountTo(StatusCollection sc, Boolean hasExceed) {
 
             var countStr = hasExceed ? "X" : list.Count.ToString();
             sc.addRun( $"取得履歴 {countStr}" );
+        }
 
+        // 取得履歴をStatusCollectionに追加する
+        public void addTo(StatusCollection sc) {
             if (list.Count > 0) {
                 sc.add( String.Join( ", ", list ), fontSize: Config.giftHistoryFontSize );
             }

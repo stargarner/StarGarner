@@ -57,6 +57,7 @@ namespace StarGarner {
             set => Interlocked.Exchange( ref _lastHttpRequest, value );
         }
 
+
         //###################################################
 
         // 部屋の種類にマッチするGarner
@@ -311,7 +312,7 @@ namespace StarGarner {
 
                 var x = garner.increment( now );
 
-                notificationSound.play( garner.isSeed, NotificationSound.counts[ Math.Min( 10, x ) ] );
+                notificationSound.play( garner.soundActor, NotificationSound.counts[ Math.Min( 10, x ) ] );
 
                 Log.d( $"取得にかかった時間 {( now - lastOpenRoom ).formatDuration()}" );
                 closeRoom( $"{garner.itemName} ギフトを取得しました" );
@@ -347,7 +348,7 @@ namespace StarGarner {
                 var garner = garnerFor( room );
                 var limit = parseExceedTime( now, Int32.Parse( h ), Int32.Parse( m ) );
                 garner.setExceed( now, limit );
-                notificationSound.play( garner.isSeed, NotificationSound.exceedError );
+                notificationSound.play( garner.soundActor, NotificationSound.exceedError );
                 closeRoom( $"{garner.itemName} 制限超過エラー" );
                 step( "got exceed error" );
             } catch (Exception ex) {
@@ -389,6 +390,41 @@ namespace StarGarner {
         }
 
         //######################################################
+        // garner setting dialog
+        // 星と種の設定ウィンドウ
+
+        private WeakReference<GarnerSettingDialog>? refSettingDialogStar;
+        private WeakReference<GarnerSettingDialog>? refSettingDialogSeed;
+
+        private void openGarnerSetting(Garner garner, ref WeakReference<GarnerSettingDialog>? refSettingDialog) {
+            GarnerSettingDialog? dialog = null;
+            refSettingDialog?.TryGetTarget( out dialog );
+            if (dialog != null && dialog.isClosed == false) {
+                dialog.Activate();
+                return;
+            }
+
+            // Instantiate the dialog box
+            var dlg = new GarnerSettingDialog( garner ) {
+                Owner = this
+            };
+            dlg.Show();
+            refSettingDialog = new WeakReference<GarnerSettingDialog>( dlg );
+        }
+
+
+        internal void saveGarnerSetting(Garner garner) => Dispatcher.BeginInvoke( () => {
+            try {
+                if (isClosed)
+                    return;
+
+                garner.save();
+            } catch (Exception ex) {
+                Log.e( ex, "saveGarnerSetting failed." );
+            }
+        } );
+
+        //######################################################
         // window lifecycle event
 
         protected override void OnClosed(EventArgs e) {
@@ -397,6 +433,7 @@ namespace StarGarner {
             cefBrowser.Dispose();
             base.OnClosed( e );
             Utils.singleTask.complete();
+            notificationSound.Dispose();
         }
 
         public MainWindow() {
@@ -424,6 +461,10 @@ namespace StarGarner {
             MyResourceRequestHandler.responseLogEnabled = cbResponseLog.IsChecked ?? false;
 
             var isInInitialize = true;
+
+            miExit.Click += (sender, e) => Close();
+            miStarSetting.Click += (sender, e) => openGarnerSetting( starGarner, ref refSettingDialogStar );
+            miSeedSetting.Click += (sender, e) => openGarnerSetting( seedGarner, ref refSettingDialogSeed );
 
             tbStartTimeStar.TextChanged += (sender, e) => {
                 if (isInInitialize)
@@ -476,5 +517,6 @@ namespace StarGarner {
 
             isInInitialize = false;
         }
+
     }
 }
