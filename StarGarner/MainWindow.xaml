@@ -15,40 +15,56 @@
         <StackPanel
             DockPanel.Dock="Top"
             Orientation="Vertical">
-            <Menu>
-                <MenuItem
-                    x:Name="miExit"
-                    x:FieldModifier="private"
-                    Header="終了" />
-                <MenuItem
-                    x:Name="miStarSetting"
-                    x:FieldModifier="private"
-                    Header="星の設定" />
-                <MenuItem
-                    x:Name="miSeedSetting"
-                    x:FieldModifier="private"
-                    Header="種の設定" />
-                <MenuItem
-                    x:Name="miOtherSetting"
-                    x:FieldModifier="private"
-                    Header="その他の設定" />
-            </Menu>
+
             <Grid Margin="4,4,4,4">
 
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
+                <StackPanel
+                    Grid.Column="0"
+                    Orientation="Horizontal">
+                    <Label
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Stretch"
+                        VerticalContentAlignment="Center"
+                        Content="設定" />
+
+                    <Button
+                        x:Name="btnStarSetting"
+                        MinWidth="32"
+                        Margin="4,0,0,0"
+                        VerticalAlignment="Stretch"
+                        x:FieldModifier="private"
+                        Content="星" />
+                    <Button
+                        x:Name="btnSeedSetting"
+                        MinWidth="32"
+                        Margin="4,0,0,0"
+                        VerticalAlignment="Stretch"
+                        x:FieldModifier="private"
+                        Content="種" />
+                    <Button
+                        x:Name="btnOtherSetting"
+                        MinWidth="32"
+                        Margin="4,0,0,0"
+                        VerticalAlignment="Stretch"
+                        x:FieldModifier="private"
+                        Content="他" />
+                </StackPanel>
 
                 <Label
-                    Grid.Column="0"
+                    Grid.Column="1"
+                    Margin="16,0,0,0"
                     HorizontalAlignment="Left"
                     VerticalAlignment="Stretch"
                     VerticalContentAlignment="Center"
                     Content="配信開始時刻と3周目までの分" />
                 <DockPanel
-                    Grid.Column="1"
+                    Grid.Column="2"
                     Margin="8,0,0,0"
                     LastChildFill="True">
                     <Label
@@ -69,7 +85,7 @@
                         Text="例 20:30+15" />
                 </DockPanel>
                 <DockPanel
-                    Grid.Column="2"
+                    Grid.Column="3"
                     Margin="8,0,0,0"
                     LastChildFill="True">
                     <Label

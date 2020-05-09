@@ -487,10 +487,9 @@ namespace StarGarner {
 
             var isInInitialize = true;
 
-            miExit.Click += (sender, e) => Close();
-            miStarSetting.Click += (sender, e) => openGarnerSetting( starGarner, ref refSettingDialogStar );
-            miSeedSetting.Click += (sender, e) => openGarnerSetting( seedGarner, ref refSettingDialogSeed );
-            miOtherSetting.Click += (sender, e) => openOtherSetting();
+            btnStarSetting.Click += (sender, e) => openGarnerSetting( starGarner, ref refSettingDialogStar );
+            btnSeedSetting.Click += (sender, e) => openGarnerSetting( seedGarner, ref refSettingDialogSeed );
+            btnOtherSetting.Click += (sender, e) => openOtherSetting();
             tbStartTimeStar.TextChanged += (sender, e) => {
                 if (isInInitialize)
                     return;
