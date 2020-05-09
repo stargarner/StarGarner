@@ -31,24 +31,25 @@
                 Padding="16,0,16,0"
                 x:FieldModifier="private"
                 Content="OK" />
+
             <Button
-                x:Name="btnCancel"
+                x:Name="btnApply"
                 Grid.Column="1"
                 Width="Auto"
                 Height="Auto"
                 Margin="4,0,0,0"
                 Padding="16,0,16,0"
                 x:FieldModifier="private"
-                Content="キャンセル" />
+                Content="適用" />
             <Button
-                x:Name="btnApply"
+                x:Name="btnCancel"
                 Grid.Column="2"
                 Width="Auto"
                 Height="Auto"
                 Margin="4,0,0,0"
                 Padding="16,0,16,0"
                 x:FieldModifier="private"
-                Content="適用" />
+                Content="キャンセル" />
         </Grid>
         <ScrollViewer>
             <StackPanel

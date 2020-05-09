@@ -61,11 +61,11 @@
                     Margin="16,0,0,0"
                     HorizontalAlignment="Left"
                     VerticalAlignment="Stretch"
-                    VerticalContentAlignment="Center"
-                    Content="配信開始時刻と3周目までの分" />
+                    VerticalContentAlignment="Center">
+                    <TextBlock>配信開始時刻と3周目までの分</TextBlock>
+                </Label>
                 <DockPanel
                     Grid.Column="2"
-                    Margin="8,0,0,0"
                     LastChildFill="True">
                     <Label
                         HorizontalAlignment="Left"
