@@ -8,13 +8,13 @@ namespace StarGarner {
         public void TestMethod1() {
             Log.d( "test start" );
             {
-                var isSeed = false;
+                var actor = "sora";
                 using var notificationSound = new NotificationSound();
                 var file = NotificationSound.liveStart;
-                notificationSound.play( isSeed, file );
+                notificationSound.play( actor, file );
                 Thread.Sleep( 1000 );
-                notificationSound.play( isSeed, file );
-                while (notificationSound.isPlaying( isSeed, file )) {
+                notificationSound.play( actor, file );
+                while (notificationSound.isPlaying( actor, file )) {
                     Thread.Sleep( 1000 );
                 }
             }
@@ -25,10 +25,10 @@ namespace StarGarner {
         public void TestMethod2() {
             Log.d( "test start" );
             {
-                var isSeed = true;
+                var actor = "akane";
                 using var notificationSound = new NotificationSound();
                 foreach (var c in NotificationSound.counts) {
-                    notificationSound.play( isSeed,c );
+                    notificationSound.play( actor, c );
                 }
                 Thread.Sleep( 5000 );
             }

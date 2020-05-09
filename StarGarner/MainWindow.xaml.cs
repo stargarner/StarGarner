@@ -363,9 +363,8 @@ namespace StarGarner {
             => new JObject() {
                 { Config.KEY_START_TIME_STAR ,tbStartTimeStar.Text},
                 { Config.KEY_START_TIME_SEED ,tbStartTimeSeed.Text},
-                {Config.KEY_RESPONSE_LOG,cbResponseLog.IsChecked ?? false }
+                {Config.KEY_RESPONSE_LOG,MyResourceRequestHandler.responseLogEnabled }
             }.saveTo( Config.FILE_UI_JSON );
-
 
         private void loadUI() {
             try {
@@ -381,8 +380,7 @@ namespace StarGarner {
                         tbStartTimeSeed.Text = sv;
 
                     var bv = root.Value<Boolean?>( Config.KEY_RESPONSE_LOG );
-                    if (bv != null)
-                        cbResponseLog.IsChecked = bv;
+                    MyResourceRequestHandler.responseLogEnabled = bv ?? false;
                 }
             } catch (Exception ex) {
                 Log.e( ex, "loadUI failed." );
@@ -395,6 +393,7 @@ namespace StarGarner {
 
         private WeakReference<GarnerSettingDialog>? refSettingDialogStar;
         private WeakReference<GarnerSettingDialog>? refSettingDialogSeed;
+        private WeakReference<OtherSettingDialog>? refSettingDialogOther;
 
         private void openGarnerSetting(Garner garner, ref WeakReference<GarnerSettingDialog>? refSettingDialog) {
             GarnerSettingDialog? dialog = null;
@@ -419,6 +418,32 @@ namespace StarGarner {
                     return;
 
                 garner.save();
+            } catch (Exception ex) {
+                Log.e( ex, "saveGarnerSetting failed." );
+            }
+        } );
+
+        private void openOtherSetting() {
+            OtherSettingDialog? dialog = null;
+            refSettingDialogOther?.TryGetTarget( out dialog );
+            if (dialog != null && dialog.isClosed == false) {
+                dialog.Activate();
+                return;
+            }
+
+            // Instantiate the dialog box
+            var dlg = new OtherSettingDialog() {
+                Owner = this
+            };
+            dlg.Show();
+            refSettingDialogOther = new WeakReference<OtherSettingDialog>( dlg );
+        }
+
+        internal void saveOtherSetting() => Dispatcher.BeginInvoke( () => {
+            try {
+                if (isClosed)
+                    return;
+                saveUI();
             } catch (Exception ex) {
                 Log.e( ex, "saveGarnerSetting failed." );
             }
@@ -458,14 +483,14 @@ namespace StarGarner {
             loadUI();
             starGarner.liveStarts.set( tbStartTimeStar.Text );
             seedGarner.liveStarts.set( tbStartTimeSeed.Text );
-            MyResourceRequestHandler.responseLogEnabled = cbResponseLog.IsChecked ?? false;
+
 
             var isInInitialize = true;
 
             miExit.Click += (sender, e) => Close();
             miStarSetting.Click += (sender, e) => openGarnerSetting( starGarner, ref refSettingDialogStar );
             miSeedSetting.Click += (sender, e) => openGarnerSetting( seedGarner, ref refSettingDialogSeed );
-
+            miOtherSetting.Click += (sender, e) => openOtherSetting();
             tbStartTimeStar.TextChanged += (sender, e) => {
                 if (isInInitialize)
                     return;
@@ -480,20 +505,6 @@ namespace StarGarner {
                 saveUI();
                 seedGarner.liveStarts.set( tbStartTimeSeed.Text );
                 step( "TextBoxStartTimeSeed.TextChanged" );
-            };
-
-            cbResponseLog.Checked += (sender, e) => {
-                if (isInInitialize)
-                    return;
-                saveUI();
-                MyResourceRequestHandler.responseLogEnabled = true;
-            };
-
-            cbResponseLog.Unchecked += (sender, e) => {
-                if (isInInitialize)
-                    return;
-                saveUI();
-                MyResourceRequestHandler.responseLogEnabled = false;
             };
 
             cefBrowser.BrowserSettings = new BrowserSettings {

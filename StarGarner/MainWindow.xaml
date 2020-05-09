@@ -28,84 +28,70 @@
                     x:Name="miSeedSetting"
                     x:FieldModifier="private"
                     Header="種の設定" />
+                <MenuItem
+                    x:Name="miOtherSetting"
+                    x:FieldModifier="private"
+                    Header="その他の設定" />
             </Menu>
-            <StackPanel Orientation="Horizontal">
-                <Grid Margin="4,4,4,4">
+            <Grid Margin="4,4,4,4">
 
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
 
-                    <CheckBox
-                        x:Name="cbResponseLog"
-                        Grid.Column="0"
-                        HorizontalAlignment="Center"
+                <Label
+                    Grid.Column="0"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Stretch"
+                    VerticalContentAlignment="Center"
+                    Content="配信開始時刻と3周目までの分" />
+                <DockPanel
+                    Grid.Column="1"
+                    Margin="8,0,0,0"
+                    LastChildFill="True">
+                    <Label
+                        HorizontalAlignment="Left"
                         VerticalAlignment="Stretch"
-                        HorizontalContentAlignment="Center"
+                        VerticalContentAlignment="Center"
+                        Content="星"
+                        DockPanel.Dock="Left" />
+                    <TextBox
+                        x:Name="tbStartTimeStar"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        HorizontalContentAlignment="Left"
                         VerticalContentAlignment="Center"
                         x:FieldModifier="private"
-                        Content="API応答をファイルに保存" />
-
+                        DockPanel.Dock="Right"
+                        FontSize="13"
+                        Text="例 20:30+15" />
+                </DockPanel>
+                <DockPanel
+                    Grid.Column="2"
+                    Margin="8,0,0,0"
+                    LastChildFill="True">
                     <Label
-                        Grid.Column="1"
-                        Margin="20,0,0,0"
-                        HorizontalAlignment="Center"
+                        HorizontalAlignment="Left"
                         VerticalAlignment="Stretch"
-                        HorizontalContentAlignment="Center"
                         VerticalContentAlignment="Center"
-                        Content="配信開始時刻と3周目までの分" />
-                    <DockPanel
-                        Grid.Column="2"
-                        LastChildFill="True">
-                        <Label
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Stretch"
-                            HorizontalContentAlignment="Center"
-                            VerticalContentAlignment="Center"
-                            Content="星"
-                            DockPanel.Dock="Left" />
-                        <TextBox
-                            x:Name="tbStartTimeStar"
-                            HorizontalAlignment="Stretch"
-                            VerticalAlignment="Stretch"
-                            HorizontalContentAlignment="Left"
-                            VerticalContentAlignment="Center"
-                            x:FieldModifier="private"
-                            DockPanel.Dock="Right"
-                            FontSize="13"
-                            Text="例 20:30+15" />
-                    </DockPanel>
-                    <DockPanel
-                        Grid.Column="3"
-                        Margin="4,0,0,0"
-                        LastChildFill="True">
-                        <Label
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Stretch"
-                            HorizontalContentAlignment="Center"
-                            VerticalContentAlignment="Center"
-                            Content="種"
-                            DockPanel.Dock="Left"
-                            FontFamily="Yu Gothic Medium" />
-                        <TextBox
-                            x:Name="tbStartTimeSeed"
-                            HorizontalAlignment="Stretch"
-                            VerticalAlignment="Stretch"
-                            HorizontalContentAlignment="Left"
-                            VerticalContentAlignment="Center"
-                            x:FieldModifier="private"
-                            DockPanel.Dock="Right"
-                            FontFamily="Yu Gothic Medium"
-                            FontSize="13"
-                            Text="例 0:30+15, 3:30+15, 6:30+15, 9:30+15, 12:30+15, 15:30+15, 18:30+15, 21:30+15" />
-                    </DockPanel>
-                </Grid>
-
-            </StackPanel>
-
+                        Content="種"
+                        DockPanel.Dock="Left"
+                        FontFamily="Yu Gothic Medium" />
+                    <TextBox
+                        x:Name="tbStartTimeSeed"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        HorizontalContentAlignment="Left"
+                        VerticalContentAlignment="Center"
+                        x:FieldModifier="private"
+                        DockPanel.Dock="Right"
+                        FontFamily="Yu Gothic Medium"
+                        FontSize="13"
+                        Text="例 0:30+15, 3:30+15, 6:30+15, 9:30+15, 12:30+15, 15:30+15, 18:30+15, 21:30+15" />
+                </DockPanel>
+            </Grid>
 
             <Grid>
                 <Grid.ColumnDefinitions>
