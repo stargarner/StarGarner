@@ -138,8 +138,7 @@
 <dt>UI.json</dt>
 <dd>画面上部の設定項目が保存されます。<br>&nbsp;</dd>
 
-<dt>star.json</dt>
-<dt>seed.json</dt>
+<dt>star.json<br>seed.json</dt>
 <dd>制限解除時刻や取得履歴が保存されます。<br>&nbsp;</dd>
 
 <dt>StarGarner.log</dt>
