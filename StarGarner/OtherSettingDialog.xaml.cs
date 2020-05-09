@@ -7,6 +7,8 @@ namespace StarGarner {
 
         public Boolean isClosed = false;
 
+        private MainWindow? mainWindow => (MainWindow?)Owner;
+
         private Boolean isChanged() {
             var changed = false;
 
@@ -26,7 +28,6 @@ namespace StarGarner {
             var responseLog = cbResponseLog.IsChecked ?? false;
             MyResourceRequestHandler.responseLogEnabled = responseLog;
 
-            var mainWindow = (MainWindow?)Owner;
             mainWindow?.saveOtherSetting();
         }
 

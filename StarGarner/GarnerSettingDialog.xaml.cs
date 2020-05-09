@@ -13,7 +13,8 @@ namespace StarGarner {
     public partial class GarnerSettingDialog : Window {
 
         private readonly Garner garner;
-        private readonly NotificationSound notificationSound = new NotificationSound();
+
+        private MainWindow? mainWindow => (MainWindow?)Owner;
 
         private Boolean isChanged() {
             var changed = false;
@@ -33,7 +34,6 @@ namespace StarGarner {
             if (st != null)
                 garner.soundActor = st.Name;
 
-            var mainWindow = (MainWindow?)Owner;
             mainWindow?.saveGarnerSetting( garner );
         }
 
@@ -45,7 +45,6 @@ namespace StarGarner {
         protected override void OnClosed(EventArgs e) {
             isClosed = true;
             base.OnClosed( e );
-            notificationSound.Dispose();
         }
 
         public GarnerSettingDialog(Garner garner) {
@@ -80,7 +79,7 @@ namespace StarGarner {
             btnTestSoundActor.Click += (sender, e) => {
                 var st = (ListItemActor?)lbSoundActor.SelectedItem;
                 if (st != null)
-                    notificationSound.play( st.Name, NotificationSound.liveStart );
+                    mainWindow?.notificationSound?.play( st.Name, NotificationSound.liveStart );
             };
 
             updateApplyButton();
