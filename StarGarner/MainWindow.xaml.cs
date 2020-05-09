@@ -256,6 +256,17 @@ namespace StarGarner {
 
         internal void onRequestCookie(String cookie) => Dispatcher.BeginInvoke( () => onLiveChecker.setCookie( cookie ) );
 
+        public void onNotLive() => Dispatcher.BeginInvoke( () => {
+            try {
+                if (isClosed)
+                    return;
+                if (currentRoom != null)
+                    closeRoom( "配信中ではなかった", dontResetForceOpen: true );
+            } catch (Exception ex) {
+                Log.e( ex, "onNotLive failed." );
+            }
+        } );
+
         public void onGiftCount(Int64 now, List<JObject> gifts, String caller) => Dispatcher.BeginInvoke( () => {
             try {
                 if (isClosed)

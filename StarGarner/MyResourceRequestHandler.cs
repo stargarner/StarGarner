@@ -82,7 +82,11 @@ namespace StarGarner {
                         foreach (JObject gift in JToken.Parse( src ).Value<JArray>( "gift_list" )) {
                             list.Add( gift );
                         }
-                        window.onGiftCount( now, list, url );
+                        if (list.Count == 0) {
+                            window.onNotLive( );
+                        } else {
+                            window.onGiftCount( now, list, url );
+                        }
                     } catch (Exception ex) {
                         Log.e( ex, $"parse error. {url} {src}" );
                     }

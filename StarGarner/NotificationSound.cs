@@ -35,6 +35,11 @@ namespace StarGarner {
             }
         }
 
+        private static String getSoundFile(Boolean isSeed, String file) {
+            var who = isSeed ? "akane" : "sora";
+            return $"{soundDir}/{who}-{file}";
+        }
+
         public class PlayingInfo : IDisposable {
             AudioFileReader? reader;
             WaveOutEvent? output;
@@ -80,12 +85,6 @@ namespace StarGarner {
         }
 
         private readonly Dictionary<String, PlayingInfo> playerMap = new Dictionary<String, PlayingInfo>();
-
-        private static String getSoundFile(Boolean isSeed, String file) {
-            var who = isSeed ? "akane" : "sora";
-            return $"{soundDir}/{who}-{file}";
-        }
-
 
         public void stop(Boolean isSeed, String file) {
             var fullPath = getSoundFile( isSeed, file );
