@@ -1,8 +1,10 @@
-﻿using System;
+﻿using StarGarner.Model;
+using StarGarner.Util;
+using System;
 using System.Collections.ObjectModel;
 using System.Windows;
 
-namespace StarGarner {
+namespace StarGarner.Dialog {
 
     public class ListItemActor {
         public String Name {

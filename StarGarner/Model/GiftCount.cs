@@ -1,8 +1,9 @@
-﻿using System;
+﻿using StarGarner.Util;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace StarGarner {
+namespace StarGarner.Model {
 
     public class GiftCounts {
 
@@ -25,7 +26,7 @@ namespace StarGarner {
 
         // ギフト所持数を最近読んだならその合計値、もしくはnull
         public Int32? sumInTime(Int64 now)
-            => isInTime( now ) ? sum() : (Int32?)null;
+            => isInTime( now ) ? sum() : null;
 
         // ギフト所持数の合計値、もしくはnull
         public Int32? sum() {

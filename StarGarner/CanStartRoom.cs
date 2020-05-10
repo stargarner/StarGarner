@@ -1,4 +1,6 @@
-﻿using System;
+﻿using StarGarner.Model;
+using StarGarner.Util;
+using System;
 using System.Collections.Generic;
 using System.Windows.Documents;
 

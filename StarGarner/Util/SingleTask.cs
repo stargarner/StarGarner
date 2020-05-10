@@ -2,7 +2,7 @@
 using System.Threading.Channels;
 using System.Threading.Tasks;
 
-namespace StarGarner {
+namespace StarGarner.Util {
 
     // データの保存など、並行性があるのが好ましくない処理に使う
     public class SingleTask : IDisposable {

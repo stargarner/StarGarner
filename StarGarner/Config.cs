@@ -1,4 +1,5 @@
-﻿using System;
+﻿using StarGarner.Util;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
@@ -13,12 +14,12 @@ namespace StarGarner {
         private const String AES_Key = @"9Fix4L4hB4PKeKWY";
 
         // HTTPリクエストのUser-Agent
-        internal static readonly String userAgent = test( "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36" );
+        internal static readonly String userAgent = test( @"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36" );
 
         // 初期ページおよび部屋を閉じた時に戻るページ。ログイン状態を判断できること
-        internal static readonly String URL_TOP = d( "COTmJ4DIVJHVfuJtBatjGqIoSUwQQ1isTjszBtk9Y1w=" );
+        internal static readonly String URL_TOP = d( @"COTmJ4DIVJHVfuJtBatjGqIoSUwQQ1isTjszBtk9Y1w=" );
 
-        internal static readonly String REGEX_SITE_DOMAIN = d( "tPw9gD1b+q73JeHqDL4G2vfEWXVUCH6M7EQ2N7FdcdU=" );
+        internal static readonly String REGEX_SITE_DOMAIN = d( @"tPw9gD1b+q73JeHqDL4G2vfEWXVUCH6M7EQ2N7FdcdU=" );
 
         // 星と種のギフトID
         internal static readonly HashSet<Int32> starIds = new HashSet<Int32>() { 1, 2, 1001, 1002, 1003 };

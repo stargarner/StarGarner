@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace StarGarner {
+namespace StarGarner.Model {
     internal class Room : IComparable<Room> {
         internal readonly String roomUrlKey;
         internal readonly Int64 roomId;
@@ -16,6 +16,6 @@ namespace StarGarner {
 
         // デフォルトのソート順は startedAt の降順
         public Int32 CompareTo(Room other)
-            => other.startedAt.CompareTo( this.startedAt );
+            => other.startedAt.CompareTo( startedAt );
     }
 }

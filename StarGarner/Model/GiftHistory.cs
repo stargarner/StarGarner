@@ -1,8 +1,9 @@
 ﻿using Newtonsoft.Json.Linq;
+using StarGarner.Util;
 using System;
 using System.Collections.Generic;
 
-namespace StarGarner {
+namespace StarGarner.Model {
 
     public class GiftHistory {
         private class Item : IComparable<Item> {

@@ -8,7 +8,7 @@ using System.Text;
 using System.Windows;
 using System.Windows.Documents;
 
-namespace StarGarner {
+namespace StarGarner.Util {
     internal static class Utils {
 
         internal static SingleTask singleTask = new SingleTask();
@@ -54,8 +54,8 @@ namespace StarGarner {
                 return default;
             }
         }
-        public static T firstOrNull<T>(this List<T> list) => elementOrNull( list, 0 );
-        public static T lastOrNull<T>(this List<T> list) => elementOrNull( list, list.Count - 1 );
+        public static T firstOrNull<T>(this List<T> list) => list.elementOrNull( 0 );
+        public static T lastOrNull<T>(this List<T> list) => list.elementOrNull( list.Count - 1 );
 #nullable enable
 
 

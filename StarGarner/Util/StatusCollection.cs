@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Security.Cryptography.Xml;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 
-namespace StarGarner {
+namespace StarGarner.Util {
     public class StatusCollection {
         private readonly List<Inline> list = new List<Inline>();
 

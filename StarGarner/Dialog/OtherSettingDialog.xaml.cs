@@ -1,7 +1,8 @@
-﻿using System;
+﻿using StarGarner.Util;
+using System;
 using System.Windows;
 
-namespace StarGarner {
+namespace StarGarner.Dialog {
 
     public partial class OtherSettingDialog : Window {
 

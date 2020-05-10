@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 
-namespace StarGarner {
+namespace StarGarner.Util {
 
     public static class Log {
         private const String logFile = "StarGarner.log";
@@ -15,7 +15,7 @@ namespace StarGarner {
                 writer = new StreamWriter( logFile, true, Encoding.UTF8 );
             } catch (Exception ex) {
                 writer = null;
-                Log.e( ex, $"can't open log file. {logFile}" );
+                e( ex, $"can't open log file. {logFile}" );
             }
         }
 

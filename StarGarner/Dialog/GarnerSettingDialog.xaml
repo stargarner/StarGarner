@@ -1,16 +1,15 @@
 ﻿<Window
-    x:Class="StarGarner.OtherSettingDialog"
+    x:Class="StarGarner.Dialog.GarnerSettingDialog"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    Title="その他の設定"
+    Title="GarnerSettingDialog"
     Width="640"
     Height="320"
     WindowStyle="SingleBorderWindow"
     mc:Ignorable="d">
     <DockPanel LastChildFill="True">
-
         <Grid
             Width="Auto"
             MinHeight="32"
@@ -27,7 +26,6 @@
                 Grid.Column="0"
                 Width="Auto"
                 Height="Auto"
-                Margin="4,0,0,0"
                 Padding="16,0,16,0"
                 x:FieldModifier="private"
                 Content="OK" />
@@ -52,18 +50,50 @@
                 Content="キャンセル" />
         </Grid>
         <ScrollViewer>
-            <StackPanel
-                Margin="4,4,4,4"
-                Orientation="Vertical">
-                <CheckBox
-                    x:Name="cbResponseLog"
+            <StackPanel Orientation="Vertical">
+                <Label
                     Width="Auto"
-                    MinHeight="32"
+                    HorizontalAlignment="Left"
+                    Content="通知音の声優" />
+                <ListBox
+                    x:Name="lbSoundActor"
+                    Width="Auto"
+                    Height="Auto"
+                    Margin="4"
                     HorizontalAlignment="Left"
                     VerticalAlignment="Top"
-                    VerticalContentAlignment="Center"
                     x:FieldModifier="private"
-                    Content="API応答をファイルに保存" />
+                    SelectionMode="Single">
+                    <ListBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <VirtualizingStackPanel
+                                IsItemsHost="True"
+                                Orientation="Horizontal" />
+                        </ItemsPanelTemplate>
+                    </ListBox.ItemsPanel>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Label
+                                Height="32"
+                                HorizontalAlignment="Center"
+                                HorizontalContentAlignment="Center"
+                                VerticalContentAlignment="Center"
+                                Content="{Binding Name}" />
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+                <StackPanel>
+                    <Button
+                        x:Name="btnTestSoundActor"
+                        Width="Auto"
+                        MinWidth="32"
+                        MinHeight="32"
+                        Margin="4,4,4,4"
+                        Padding="8,0,8,0"
+                        HorizontalAlignment="Left"
+                        x:FieldModifier="private"
+                        Content="テスト" />
+                </StackPanel>
             </StackPanel>
         </ScrollViewer>
     </DockPanel>

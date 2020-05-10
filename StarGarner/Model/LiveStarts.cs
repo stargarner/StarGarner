@@ -1,9 +1,10 @@
-﻿using System;
+﻿using StarGarner.Util;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace StarGarner {
+namespace StarGarner.Model {
 
     public class LiveStarts {
 
@@ -14,7 +15,7 @@ namespace StarGarner {
 
             public TimeAndOffset(Int64 time, Int64 thirdLapOffset) {
                 this.time = time;
-                this.offset = thirdLapOffset;
+                offset = thirdLapOffset;
             }
         }
 
@@ -81,7 +82,7 @@ namespace StarGarner {
                 if (st != null)
                     tmpList.Add( st );
             }
-            this.list = tmpList;
+            list = tmpList;
         }
 
         // 現在注目している配信はどれか

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-namespace StarGarner {
+namespace StarGarner.Util {
     internal class ScreenKeeper {
 
         [StructLayout( LayoutKind.Sequential )]

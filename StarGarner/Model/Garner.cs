@@ -1,11 +1,10 @@
 ﻿using Newtonsoft.Json.Linq;
+using StarGarner.Util;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Threading.Tasks;
-using System.Windows.Documents;
 
-namespace StarGarner {
+namespace StarGarner.Model {
 
     // garner for star or seed.
     public class Garner {
@@ -53,12 +52,12 @@ namespace StarGarner {
         // 初期化
         internal Garner(Boolean isSeed) {
             this.isSeed = isSeed;
-            this.itemName = isSeed ? "種" : "星";
-            this.itemNameEn = isSeed ? "seed" : "star";
-            this.jsonFile = $"{itemNameEn}.json";
-            this.soundActor = isSeed ? "akane" : "sora";
-            this.giftHistory = new GiftHistory( itemName );
-            this.giftCounts = new GiftCounts( itemName );
+            itemName = isSeed ? "種" : "星";
+            itemNameEn = isSeed ? "seed" : "star";
+            jsonFile = $"{itemNameEn}.json";
+            soundActor = isSeed ? "akane" : "sora";
+            giftHistory = new GiftHistory( itemName );
+            giftCounts = new GiftCounts( itemName );
 
             try {
                 if (File.Exists( jsonFile )) {

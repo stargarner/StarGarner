@@ -1,7 +1,6 @@
 ﻿using System;
-using System.Text;
 
-namespace StarGarner {
+namespace StarGarner.Util {
 
     public static class UnixTime {
         public static readonly DateTime dtEpoch = new DateTime( 1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc );
@@ -28,12 +27,12 @@ namespace StarGarner {
             => t.toDateTime().formatFileTime();
 
         public static String formatTime(this DateTime dt, Boolean showMillisecond = false)
-            => showMillisecond 
+            => showMillisecond
             ? String.Format( "{0}h{1:00}m{2:00}.{3:000}s", dt.Hour, dt.Minute, dt.Second, dt.Millisecond )
             : String.Format( "{0}h{1:00}m{2:00}.{3:0}s", dt.Hour, dt.Minute, dt.Second, dt.Millisecond / 100L )
             ;
 
-        public static String formatTime(this Int64 t,Boolean showMillisecond=false)
+        public static String formatTime(this Int64 t, Boolean showMillisecond = false)
             => t.toDateTime().formatTime( showMillisecond );
 
         public static String formatDuration(this Int64 t) {
