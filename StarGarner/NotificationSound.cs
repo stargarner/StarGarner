@@ -14,6 +14,14 @@ namespace StarGarner {
 
         public static readonly List<String> counts = Enumerable.Range( 0, 11 ).Select( x => $"count-{x}.m4a" ).ToList();
 
+        public static readonly List<String> all = allSoundName();
+
+        private static List<String> allSoundName() {
+            var dst = new List<String>() { liveStart, exceedReset, thirdLap, exceedError };
+            dst.AddRange( counts );
+            return dst;
+        }
+
         private static readonly String soundDir = findSoundDirectory();
 
         // CWDから上に辿ってsoundフォルダを探す
@@ -92,10 +100,7 @@ namespace StarGarner {
 
         private readonly Dictionary<String, PlayingInfo> playerMap = new Dictionary<String, PlayingInfo>();
 
-        public void stop(String actorName, String file) {
-            var fullPath = getSoundFile( actorName, file );
-            if (fullPath == null)
-                return;
+        private void stop(String fullPath) {
             try {
                 lock (playerMap) {
                     playerMap.TryGetValue( fullPath, out var p );
@@ -110,11 +115,11 @@ namespace StarGarner {
         }
 
         public void play(String actorName, String file) {
-            stop( actorName, file );
-
             var fullPath = getSoundFile( actorName, file );
             if (fullPath == null)
                 return;
+
+            stop( fullPath );
 
             lock (playerMap) {
                 try {

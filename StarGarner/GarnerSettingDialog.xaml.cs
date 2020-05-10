@@ -12,6 +12,8 @@ namespace StarGarner {
 
     public partial class GarnerSettingDialog : Window {
 
+        static readonly Random random = new Random();
+
         private readonly Garner garner;
 
         private MainWindow? mainWindow => (MainWindow?)Owner;
@@ -39,6 +41,17 @@ namespace StarGarner {
 
         private void updateApplyButton() => btnApply.IsEnabled = isChanged();
 
+        void testSound() {
+            var st = (ListItemActor?)lbSoundActor.SelectedItem;
+            if (st == null)
+                return;
+
+            var soundName = NotificationSound.all[ random.Next( NotificationSound.all.Count ) ];
+
+            mainWindow?.notificationSound?.play( st.Name, soundName );
+        }
+
+        //############################################################
 
         public Boolean isClosed = false;
 
@@ -76,11 +89,7 @@ namespace StarGarner {
             lbSoundActor.SelectedIndex = selectedIndex ?? 0;
             lbSoundActor.SelectionChanged += (sender, e) => updateApplyButton();
 
-            btnTestSoundActor.Click += (sender, e) => {
-                var st = (ListItemActor?)lbSoundActor.SelectedItem;
-                if (st != null)
-                    mainWindow?.notificationSound?.play( st.Name, NotificationSound.liveStart );
-            };
+            btnTestSoundActor.Click += (sender, e) => testSound();
 
             updateApplyButton();
         }

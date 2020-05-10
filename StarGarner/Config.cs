@@ -13,7 +13,7 @@ namespace StarGarner {
         private const String AES_Key = @"9Fix4L4hB4PKeKWY";
 
         // HTTPリクエストのUser-Agent
-        internal static readonly String userAgent = test( "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.122 Safari/537.36" );
+        internal static readonly String userAgent = test( "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36" );
 
         // 初期ページおよび部屋を閉じた時に戻るページ。ログイン状態を判断できること
         internal static readonly String URL_TOP = d( "COTmJ4DIVJHVfuJtBatjGqIoSUwQQ1isTjszBtk9Y1w=" );

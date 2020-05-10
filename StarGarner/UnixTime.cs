@@ -27,11 +27,14 @@ namespace StarGarner {
         public static String formatFileTime(this Int64 t)
             => t.toDateTime().formatFileTime();
 
-        public static String formatTime(this DateTime dt)
-            => String.Format( "{0}h{1:00}m{2:00}.{3:0}s", dt.Hour, dt.Minute, dt.Second, dt.Millisecond / 100L );
+        public static String formatTime(this DateTime dt, Boolean showMillisecond = false)
+            => showMillisecond 
+            ? String.Format( "{0}h{1:00}m{2:00}.{3:000}s", dt.Hour, dt.Minute, dt.Second, dt.Millisecond )
+            : String.Format( "{0}h{1:00}m{2:00}.{3:0}s", dt.Hour, dt.Minute, dt.Second, dt.Millisecond / 100L )
+            ;
 
-        public static String formatTime(this Int64 t)
-            => t.toDateTime().formatTime();
+        public static String formatTime(this Int64 t,Boolean showMillisecond=false)
+            => t.toDateTime().formatTime( showMillisecond );
 
         public static String formatDuration(this Int64 t) {
             var sign = t < 0 ? "-" : "";

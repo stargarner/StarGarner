@@ -138,8 +138,8 @@ namespace StarGarner {
         // 履歴を追加
         public void increment(Int64 now) => trim( now, true );
 
-        // 解除予測の変化時にログ出力..
-        private Int64 lastExpectedReset;
+        // 解除予測が変化したらログ出力する
+        private Int64? lastExpectedReset = null;
 
         // 解除予測時刻を調べる
         // 副作用として古い取得履歴を削除する
@@ -149,16 +149,15 @@ namespace StarGarner {
             var lastStart = trim( now );
             var newValue = lastStart != null ? lastStart.time + UnixTime.hour1 : 0L;
 
-            // 解除予測の変化時にログ出力
-            if (lastExpectedReset != newValue) {
-                lastExpectedReset = newValue;
-                var delta = newValue - now;
+            // 解除予測が変化したらログ出力する
+            if (lastExpectedReset != null && lastExpectedReset != newValue) {
                 if (newValue == 0L) {
-                    Log.d( $"{itemName} 解除予測が変わりました。 0" );
+                    Log.d( $"{itemName} 解除予測がリセットされました。" );
                 } else {
-                    Log.d( $"{itemName} 解除予測が変わりました。{newValue.formatTime()} 残り{delta.formatDuration()}" );
+                    Log.d( $"{itemName} 解除予測が変わりました。{newValue.formatTime( showMillisecond: true )} 残り{( newValue - now ).formatDuration()}" );
                 }
             }
+            lastExpectedReset = newValue;
 
             return newValue;
         }
