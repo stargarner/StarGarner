@@ -28,7 +28,7 @@ if( index( $outDir,"/bin/x64/Release/") >= 0 ){
 	system qq($zip -r $zipfile * -x \@${solutionDir}/exclude.list  );
 
 	chdir($solutionDir);
-	system qq($zip $zipfile StarGarner.txt sound/*.m4a);
+	system qq($zip $zipfile README.md sound/*.m4a);
 }
 
 

@@ -5,6 +5,7 @@
 .vs/
 
 *.zip
+*.txt
 StarGarner.log
 UI.json
 seed.json
