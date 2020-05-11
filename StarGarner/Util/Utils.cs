@@ -5,8 +5,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Documents;
+using System.Windows.Threading;
+using uhttpsharp;
+using uhttpsharp.Handlers;
 
 namespace StarGarner.Util {
     internal static class Utils {
@@ -74,6 +78,42 @@ namespace StarGarner.Util {
             var currentStyle = GetWindowLong( hwnd, GWL_STYLE );
 
             SetWindowLong( hwnd, GWL_STYLE, currentStyle & ~WS_MAXIMIZEBOX & ~WS_MINIMIZEBOX );
+        }
+
+        public class FooHandler : IHttpRequestHandler {
+            readonly Func<IHttpContext, Task> handler;
+
+            public FooHandler(Func<IHttpContext, Task> handler) => this.handler = handler;
+
+            public Task Handle(IHttpContext context, Func<Task> next) => handler( context );
+        }
+
+        public static void With(this HttpRouter router, String path, Func<IHttpContext, Task> action)
+            => router.With( path, new FooHandler( action ) );
+
+        public static Task RunAsync(this Dispatcher dispatcher, Action action) {
+            var taskCompletionSource = new TaskCompletionSource<Boolean>();
+            dispatcher.BeginInvoke( () => {
+                try {
+                    action();
+                    taskCompletionSource.SetResult( false );
+                }catch(Exception ex) {
+                    taskCompletionSource.SetException( ex );
+                }
+            } );
+            return taskCompletionSource.Task;
+        }
+
+        public static Task<T> RunAsync<T>(this Dispatcher dispatcher, Func<T> action) {
+            var taskCompletionSource = new TaskCompletionSource<T>();
+            dispatcher.BeginInvoke( () => {
+                try {
+                    taskCompletionSource.SetResult( action() );
+                } catch (Exception ex) {
+                    taskCompletionSource.SetException( ex );
+                }
+            } );
+            return taskCompletionSource.Task;
         }
     }
 }

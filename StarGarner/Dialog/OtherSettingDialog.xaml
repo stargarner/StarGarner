@@ -55,15 +55,49 @@
             <StackPanel
                 Margin="4,4,4,4"
                 Orientation="Vertical">
-                <CheckBox
-                    x:Name="cbResponseLog"
-                    Width="Auto"
-                    MinHeight="32"
-                    HorizontalAlignment="Left"
-                    VerticalAlignment="Top"
-                    VerticalContentAlignment="Center"
-                    x:FieldModifier="private"
-                    Content="API応答をファイルに保存" />
+
+                <GroupBox Margin="4">
+                    <GroupBox.Header>
+                        <CheckBox
+                            x:Name="cbListen"
+                            x:FieldModifier="private"
+                            Content="内蔵HTTPサーバ" />
+                    </GroupBox.Header>
+
+                    <StackPanel Orientation="Vertical">
+                        <Label Content="待機アドレス" />
+                        <TextBox
+                            x:Name="tbListenAddress"
+                            x:FieldModifier="private" />
+
+                        <Label Content="待機ポート" />
+                        <TextBox
+                            x:Name="tbListenPort"
+                            x:FieldModifier="private" />
+
+                        <TextBlock
+                            x:Name="tbListenError"
+                            x:FieldModifier="private"
+                            Foreground="Red" />
+                    </StackPanel>
+                </GroupBox>
+
+                <GroupBox
+                    Margin="4"
+                    Header="開発者向け機能">
+                    <StackPanel Orientation="Vertical">
+                        <CheckBox
+                            x:Name="cbResponseLog"
+                            Width="Auto"
+                            MinHeight="32"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Top"
+                            VerticalContentAlignment="Center"
+                            x:FieldModifier="private"
+                            Content="API応答をファイルに保存" />
+                    </StackPanel>
+                </GroupBox>
+
             </StackPanel>
         </ScrollViewer>
     </DockPanel>

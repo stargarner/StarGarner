@@ -70,16 +70,19 @@ namespace StarGarner {
         internal const String KEY_START_TIME_STAR = "TextBoxStartTimeStar";
         internal const String KEY_START_TIME_SEED = "TextBoxStartTimeSeed";
         internal const String KEY_RESPONSE_LOG = "ResponseLog";
+        internal const String KEY_LISTEN_ENABLED = "listenEnabled";
+        internal const String KEY_LISTEN_ADDR = "listenAddr";
+        internal const String KEY_LISTEN_PORT= "listenPort";
 
         // garner設定保存キー
         internal const String KEY_EXPIRE_EXCEED = "expireExceed";
         internal const String KEY_HISTORY = "history2";
-        internal const String KEY_SOUND_ACTOR= "soundActor";
+        internal const String KEY_SOUND_ACTOR = "soundActor";
         internal const String KEY_TIME = "time";
         internal const String KEY_COUNT = "count";
-        internal const String KEY_LAST_PLAY_LIVE_START= "lastPlayLiveStart";
-        internal const String KEY_LAST_PLAY_THIRD_LAP= "lastPlayThirdLap";
-        internal const String KEY_LAST_PLAY_HISTORY_CLEAR= "lastPlayHistoryClear";
+        internal const String KEY_LAST_PLAY_LIVE_START = "lastPlayLiveStart";
+        internal const String KEY_LAST_PLAY_THIRD_LAP = "lastPlayThirdLap";
+        internal const String KEY_LAST_PLAY_HISTORY_CLEAR = "lastPlayHistoryClear";
 
         // メッセージ表示のprefix
         internal const String PREFIX_CLOSE_REASON = "部屋を閉じた理由：";

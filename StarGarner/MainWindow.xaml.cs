@@ -8,8 +8,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
+using uhttpsharp;
 
 namespace StarGarner {
 
@@ -29,6 +31,8 @@ namespace StarGarner {
         internal readonly NotificationSound notificationSound = new NotificationSound();
 
         private readonly ScreenKeeper screenKeeper = new ScreenKeeper();
+
+        internal readonly MyHttpServer httpServer;
 
         // ウィンドウを閉じたか
         private Boolean isClosed = false;
@@ -59,6 +63,15 @@ namespace StarGarner {
             get => Interlocked.Read( ref _lastHttpRequest );
             set => Interlocked.Exchange( ref _lastHttpRequest, value );
         }
+
+        internal Task onStatus(IHttpContext httpContext)
+            => Dispatcher.RunAsync( () =>
+            httpContext.Response = new HttpResponse(
+                HttpResponseCode.Ok,
+                $"日本語ABC!!",
+                closeConnection: true
+        ) );
+
 
 
         //###################################################
@@ -366,7 +379,10 @@ namespace StarGarner {
             => new JObject() {
                 { Config.KEY_START_TIME_STAR ,tbStartTimeStar.Text},
                 { Config.KEY_START_TIME_SEED ,tbStartTimeSeed.Text},
-                {Config.KEY_RESPONSE_LOG,MyResourceRequestHandler.responseLogEnabled }
+                { Config.KEY_RESPONSE_LOG, MyResourceRequestHandler.responseLogEnabled },
+                { Config.KEY_LISTEN_ENABLED, httpServer.enabled },
+                { Config.KEY_LISTEN_ADDR, httpServer.listenAddr },
+                { Config.KEY_LISTEN_PORT, httpServer.listenPort },
             }.saveTo( Config.FILE_UI_JSON );
 
         private void loadUI() {
@@ -382,7 +398,20 @@ namespace StarGarner {
                     if (sv != null)
                         tbStartTimeSeed.Text = sv;
 
-                    var bv = root.Value<Boolean?>( Config.KEY_RESPONSE_LOG );
+                    sv = root.Value<String?>( Config.KEY_LISTEN_ADDR );
+                    if (sv != null)
+                        httpServer.listenAddr = sv;
+
+                    sv = root.Value<String?>( Config.KEY_LISTEN_PORT );
+                    if (sv != null)
+                        httpServer.listenPort = sv;
+
+                    var bv = root.Value<Boolean?>( Config.KEY_LISTEN_ENABLED );
+                    httpServer.enabled = bv ?? false;
+
+                    httpServer.updateListening();
+
+                    bv = root.Value<Boolean?>( Config.KEY_RESPONSE_LOG );
                     MyResourceRequestHandler.responseLogEnabled = bv ?? false;
                 }
             } catch (Exception ex) {
@@ -396,7 +425,7 @@ namespace StarGarner {
 
         private WeakReference<GarnerSettingDialog>? refSettingDialogStar;
         private WeakReference<GarnerSettingDialog>? refSettingDialogSeed;
-        private WeakReference<OtherSettingDialog>? refSettingDialogOther;
+        internal WeakReference<OtherSettingDialog>? refSettingDialogOther;
 
         private void openGarnerSetting(Garner garner, ref WeakReference<GarnerSettingDialog>? refSettingDialog) {
             GarnerSettingDialog? dialog = null;
@@ -435,9 +464,7 @@ namespace StarGarner {
             }
 
             // Instantiate the dialog box
-            var dlg = new OtherSettingDialog() {
-                Owner = this
-            };
+            var dlg = new OtherSettingDialog( this );
             dlg.Show();
             refSettingDialogOther = new WeakReference<OtherSettingDialog>( dlg );
         }
@@ -466,6 +493,7 @@ namespace StarGarner {
 
         public MainWindow() {
             this.onLiveChecker = new OnliveChecker( this );
+            this.httpServer = new MyHttpServer( this );
 
             /// Specifying a CachePath is required for persistence of cookies, saving of passwords, etc
             /// an In-Memory cache is used by default( similar to Incogneto).
