@@ -16,6 +16,7 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.CancellationException
 
 class MainActivity : AppCompatActivity(), CoroutineScope {
     companion object {
@@ -115,16 +116,19 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
     }
 
     override fun onDestroy() {
+        log.d("onDestroy")
         super.onDestroy()
         (activityJob + Dispatchers.Default).cancel()
     }
 
     override fun onStart() {
+        log.d("onStart")
         super.onStart()
         statusJob = launch(Dispatchers.Default) { loopStatus() }
     }
 
     override fun onStop() {
+        log.d("onStop")
         statusJob?.cancel()
         super.onStop()
     }
@@ -179,32 +183,41 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
     }
 
     private suspend fun loopStatus() {
-        while (coroutineContext[Job]?.isCancelled == false) {
+        log.d("loopStatus: start.")
+        val currentJob = coroutineContext[Job]!!
+        while (true) {
             val timeStart = SystemClock.elapsedRealtime()
-            try {
-                val status = try {
-                    if (server.isEmpty()) error("server is not specified.")
-                    val url = "http://${server}/status?_=$timeStart"
-                    val response = Request.Builder().url(url).build().call().await()
-                    if (!response.isSuccessful) error("response error: $response")
-                    @Suppress("BlockingMethodInNonBlockingContext")
-                    JSONObject(response.body?.string() ?: error("missing response body"))
-                } catch (ex: Throwable) {
-                    log.e(ex)
-                    JSONObject().apply {
-                        put("error", ex.withCaption("can't get status"))
-                    }
-                }
-                withContext(Dispatchers.Main) {
-                    showStatus(status)
-                }
+            val status = try {
+                if (server.isEmpty()) error("server is not specified.")
+                val url = "http://${server}/status?_=$timeStart"
+                val response = Request.Builder().url(url).build().call().await()
+                if (!response.isSuccessful) error("response error: $response")
+                @Suppress("BlockingMethodInNonBlockingContext")
+                JSONObject(response.body?.string() ?: error("missing response body"))
+            } catch (ex: CancellationException) {
+                log.d("loopStatus: request was cancelled.")
+                break
             } catch (ex: Throwable) {
-                log.e(ex)
-            } finally {
+                log.e(ex, "request failed.")
+                JSONObject().apply {
+                    put("error", ex.withCaption("can't get status"))
+                }
+            }
+            withContext(Dispatchers.Main) {
+                if (!isDestroyed) showStatus(status)
+            }
+            try {
                 val remain = timeStart + 1000L - SystemClock.elapsedRealtime()
-                if (remain > 0) delay(remain)
+                if (remain > 0 && !currentJob.isCancelled)
+                    delay(remain)
+            } catch (ex: CancellationException) {
+                log.d("loopStatus: delay was cancelled.")
+                break
+            } catch (ex: Throwable) {
+                log.e(ex, "delay failed.")
             }
         }
+        log.d("loopStatus: end.")
     }
 
     private fun CharSequence.toast() = toast(this@MainActivity)

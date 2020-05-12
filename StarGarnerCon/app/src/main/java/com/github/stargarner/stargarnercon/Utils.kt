@@ -22,8 +22,10 @@ import kotlin.coroutines.resumeWithException
 private val httpClient = OkHttpClient.Builder().build()
 
 class LogTag(private val tag: String) {
+    fun e(ex: Throwable, msg: String = "error.") = Log.e(tag, msg, ex)
+    fun d(msg: String) = Log.d(tag, msg)
+
 //    fun v(msg: String) = Log.v(tag, msg)
-//    fun d(msg: String) = Log.d(tag, msg)
 //    fun i(msg: String) = Log.i(tag, msg)
 //    fun w(msg: String) = Log.w(tag, msg)
 //    fun e(msg: String) = Log.e(tag, msg)
@@ -31,7 +33,6 @@ class LogTag(private val tag: String) {
 //    fun d(ex: Throwable, msg: String) = Log.d(tag, msg, ex)
 //    fun i(ex: Throwable, msg: String) = Log.i(tag, msg, ex)
 //    fun w(ex: Throwable, msg: String) = Log.w(tag, msg, ex)
-    fun e(ex: Throwable, msg: String = "error.") = Log.e(tag, msg, ex)
 }
 
 fun Throwable.withCaption(fmt: String?, vararg args: Any) =
