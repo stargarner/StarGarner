@@ -156,7 +156,9 @@
 <dd>アプリ内ブラウザがログを出力します。
 削除して構いません。<br>&nbsp;</dd>
 </dl>
+
 ----
+
 ## StarGarnerCon
 
 PCで動かしてるStarGarnerを外部から制御するAndroidアプリです。
