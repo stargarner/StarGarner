@@ -1,3 +1,5 @@
+import java.text.SimpleDateFormat
+
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
@@ -28,6 +30,19 @@ android {
         }
     }
 
+    // Generate Signed APK のファイル名を変更
+    android.applicationVariants.all { variant ->
+        if (variant.buildType.name == "release") {
+            variant.outputs.all {
+                // Rename APK
+                def versionCode = defaultConfig.versionCode
+                def versionName = defaultConfig.versionName
+                def flavor = variant.flavorName
+                def date = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date())
+                outputFileName = "../../StarGarnerCon-${flavor}-${versionCode}-${versionName}-${date}.apk"
+            }
+        }
+    }
 }
 
 dependencies {

@@ -17,10 +17,12 @@ if( index( $outDir,"/bin/x64/Release/") >= 0 ){
 
 	chdir($outDir);
 
+	# バージョンを調べる
 	my $a = `$sigcheck -q StarGarner.dll`;
 	$a =~ /Prod version:\s+(\S+)/ or die "can't find product version\n$a";
 	my($version)=($1);
 
+	# zipファイル名
 	my @lt = localtime;
 	$lt[5]+=1900; $lt[4]+=1;
 	my $zipfile = sprintf("${solutionDir}/StarGarner-%s-%d%02d%02d%02d%02d%02d.zip",$version,reverse @lt[0..5]);
@@ -28,25 +30,16 @@ if( index( $outDir,"/bin/x64/Release/") >= 0 ){
 	system qq($zip -r $zipfile * -x \@${solutionDir}/exclude.list  );
 
 	chdir($solutionDir);
+	
 	system qq($zip $zipfile README.md sound/*.m4a);
+
+	# apkファイル
+	if( chdir("$solutionDir/StarGarnerCon") ){
+		my $apk = `/usr/bin/ls -1at *.apk |/usr/bin/head -n 1`;
+		$apk =~ s/[\x0d\x0a*]//g;
+		if($apk){
+			system qq($zip $zipfile $apk);
+		}
+	}
 }
 
-
-__END__
-
-$ C:/app/_console/sigcheck64.exe -q StarGarner.dll
-
-Sigcheck v2.73 - File version and signature viewer
-Copyright (C) 2004-2019 Mark Russinovich
-Sysinternals - www.sysinternals.com
-
-C:\StarGarner\StarGarner\bin\x64\Release\netcoreapp3.1\StarGarner.dll:
-        Verified:       Unsigned
-        Link date:      9:23 1920/09/12
-        Publisher:      n/a
-        Company:        StarGarner
-        Description:    StarGarner
-        Product:        StarGarner
-        Prod version:   1.0.1
-        File version:   1.0.1.0
-        MachineType:    64-bit

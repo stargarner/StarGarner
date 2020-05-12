@@ -12,7 +12,6 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.coroutines.*
 import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
@@ -23,9 +22,6 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         private const val KEY_LAST_SERVER = "lastServer"
 
         private val log = LogTag("${App1.TAG}:MainActivity")
-        private val httpClient = OkHttpClient.Builder().build()
-
-        fun Request.call() = httpClient.newCall(this)
 
         private var reServerName = """\A([^:/#?]+|\[[:\dA-Fa-f]+]):\d+\z""".toRegex()
 
@@ -83,12 +79,12 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         }
 
         ibServerEdit.setOnClickListener {
-            DlgTextInput.show(
+            textDialog(
                 this,
                 tvServer.text.toString(),
                 validate = {
                     reServerName.find(it)
-                        ?: return@show "接続先が addr:port の形式ではありません"
+                        ?: return@textDialog "接続先が addr:port の形式ではありません"
                     null
                 }
             ) { sv ->
@@ -241,7 +237,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 
 
     private fun editStartTime(kind: String, tv: TextView) {
-        DlgTextInput.show(this, tv.text.toString()) { sv ->
+        textDialog(this, tv.text.toString()) { sv ->
             launch(Dispatchers.IO) {
                 try {
                     val url = "http://${server}/startTime"
