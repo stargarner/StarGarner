@@ -1,6 +1,6 @@
-﻿using StarGarner.Dialog;
-using StarGarner.Util;
+﻿using StarGarner.Util;
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
@@ -13,59 +13,92 @@ namespace StarGarner {
 
     internal class MyHttpServer {
 
+        public volatile String serverStatus = "?";
         public volatile Boolean enabled = false;
         public volatile String listenAddr = "0.0.0.0";
         public volatile String listenPort = "8485";
 
-        private volatile Task? lastTask = null;
-        private volatile Boolean isCancelled = false;
-
-        public volatile String? serverError = null;
-
         private readonly MainWindow window;
+        private readonly HttpRouter router = new HttpRouter();
+        private volatile HttpServer? httpServer = null;
 
-        public MyHttpServer(MainWindow window) => this.window = window;
+        public MyHttpServer(MainWindow window) {
+            this.window = window;
 
-        private void notifyServerStatus() {
-            OtherSettingDialog? d = null;
-            window.refSettingDialogOther?.TryGetTarget( out d );
-            d?.showServerStatus();
+            router.With( "status", window.onHttpStatus );
+            router.With( "startTime", window.onHttpStartTime );
+            router.With( "forceOpen", window.onHttpForceOpen );
+        }
+
+        String getMyAddress() {
+            var list = new List<String>();
+            try {
+                var ipentry = Dns.GetHostEntry( Dns.GetHostName() );
+
+                foreach (var ip in ipentry.AddressList) {
+                    try {
+                        list.Add( $"\n{ip}" );
+                    }catch(Exception ex) {
+                        Log.e( ex, "can't get ip address" );
+                    }
+                }
+            }catch(Exception ex) {
+                Log.e( ex, "getMyAddress failed." );
+            }
+            return String.Join( "", list );
+        }
+
+
+        private void setStatus(String s) {
+            serverStatus = s;
+            window.refSettingDialogOther?.GetOrNull()?.showServerStatus();
         }
 
         public void updateListening() => Task.Run( () => {
-            try {
-                if (lastTask != null && !lastTask.IsCompleted) {
-                    Log.d( "updateListening: cancel last task…" );
-                    isCancelled = true;
-                    lastTask?.Wait();
-                    Log.d( "updateListening: last task was cancelled." );
+            lock (this) {
+                try {
+                    if (httpServer != null) {
+                        Log.d( "updateListening: dispose last server…" );
+                        httpServer.Dispose();
+                    }
+                } catch (Exception ex) {
+                    Log.e( ex, "closing failed." );
+                } finally {
+                    httpServer = null;
                 }
-            } catch (Exception ex) {
-                Log.e( ex, "closing failed." );
-            }
 
-            isCancelled = false;
-            serverError = null;
-            notifyServerStatus();
+                if (!enabled) {
+                    Log.d( "updateListening: not enabled." );
+                    setStatus( "not enabled." );
+                    return;
+                }
 
-            if (!enabled) {
-                Log.d( "updateListening: not enabled." );
-                return;
-            }
+                IPAddress addr;
+                try {
+                    addr = IPAddress.Parse( listenAddr );
+                } catch (Exception ex) {
+                    Log.e( ex, "listenAddr parse error." );
+                    setStatus( $"待機アドレスを解釈できません。\n{ex}" );
+                    return;
+                }
 
-            lastTask = Task.Run( async () => {
+                Int32 port;
+                try {
+                    port = Int32.Parse( listenPort );
+                } catch (Exception ex) {
+                    Log.e( ex, "listenPort parse error." );
+                    setStatus( $"待機ポートを解釈できません。\n{ex}" );
+                    return;
+                }
+
                 try {
                     Log.d( $"updateListening: listen to {listenAddr} port {listenPort}…" );
-                    var router = new HttpRouter();
+                    setStatus( "initializing…" );
 
-                    router.With( "status", window.onStatus );
-
-                    var addr = IPAddress.Parse( listenAddr );
-                    var port = Int32.Parse( listenPort );
                     var tcpListener = new TcpListener( addr, port );
+                    tcpListener.Server.SetSocketOption( SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true );
 
-                    using var httpServer = new HttpServer( new HttpRequestProvider() );
-
+                    this.httpServer = new HttpServer( new HttpRequestProvider() );
                     httpServer.Use( new TcpListenerAdapter( tcpListener ) );
                     httpServer.Use( router );
                     httpServer.Use( (context, next) => {
@@ -74,16 +107,12 @@ namespace StarGarner {
                     } );
 
                     httpServer.Start();
-                    while (!isCancelled) {
-                        await Task.Delay( 333 );
-                    }
-                    Log.d( $"updateListening: server cancelled." );
+                    setStatus( $"listening {listenAddr} port {listenPort}\nmaybe your addresses are:{getMyAddress()}" );
                 } catch (Exception ex) {
-                    Log.e( ex, "http server error." );
-                    serverError = ex.ToString();
-                    notifyServerStatus();
+                    Log.e( ex, "can't start http server." );
+                    setStatus( ex.ToString() );
                 }
-            } );
+            }
         } );
     }
 }

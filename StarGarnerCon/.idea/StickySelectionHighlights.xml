@@ -1,0 +1,459 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="StickySelectionHighlights">
+    <option name="editorHighlights">
+      <map>
+        <entry key="$PROJECT_DIR$/app/build.gradle">
+          <value>
+            <PaintGroupHighlightMap>
+              <option name="paintGroups">
+                <map>
+                  <entry key="0">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                  <entry key="1">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                  <entry key="2">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                  <entry key="3">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </PaintGroupHighlightMap>
+          </value>
+        </entry>
+        <entry key="$PROJECT_DIR$/app/src/main/AndroidManifest.xml">
+          <value>
+            <PaintGroupHighlightMap>
+              <option name="paintGroups">
+                <map>
+                  <entry key="0">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                  <entry key="1">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                  <entry key="2">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                  <entry key="3">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </PaintGroupHighlightMap>
+          </value>
+        </entry>
+        <entry key="$PROJECT_DIR$/app/src/main/java/com/github/stargarner/stargarnercon/App1.kt">
+          <value>
+            <PaintGroupHighlightMap>
+              <option name="paintGroups">
+                <map>
+                  <entry key="0">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                  <entry key="1">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                  <entry key="2">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                  <entry key="3">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </PaintGroupHighlightMap>
+          </value>
+        </entry>
+        <entry key="$PROJECT_DIR$/app/src/main/java/com/github/stargarner/stargarnercon/AsciiPattern.kt">
+          <value>
+            <PaintGroupHighlightMap>
+              <option name="paintGroups">
+                <map>
+                  <entry key="0">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                  <entry key="1">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                  <entry key="2">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                  <entry key="3">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </PaintGroupHighlightMap>
+          </value>
+        </entry>
+        <entry key="$PROJECT_DIR$/app/src/main/java/com/github/stargarner/stargarnercon/CallAwait.kt">
+          <value>
+            <PaintGroupHighlightMap>
+              <option name="paintGroups">
+                <map>
+                  <entry key="0">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                  <entry key="1">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                  <entry key="2">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                  <entry key="3">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </PaintGroupHighlightMap>
+          </value>
+        </entry>
+        <entry key="$PROJECT_DIR$/app/src/main/java/com/github/stargarner/stargarnercon/DlgTextInput.kt">
+          <value>
+            <PaintGroupHighlightMap>
+              <option name="paintGroups">
+                <map>
+                  <entry key="0">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                  <entry key="1">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                  <entry key="2">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                  <entry key="3">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </PaintGroupHighlightMap>
+          </value>
+        </entry>
+        <entry key="$PROJECT_DIR$/app/src/main/java/com/github/stargarner/stargarnercon/Json.kt">
+          <value>
+            <PaintGroupHighlightMap>
+              <option name="paintGroups">
+                <map>
+                  <entry key="0">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                  <entry key="1">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                  <entry key="2">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                  <entry key="3">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </PaintGroupHighlightMap>
+          </value>
+        </entry>
+        <entry key="$PROJECT_DIR$/app/src/main/java/com/github/stargarner/stargarnercon/LogTag.kt">
+          <value>
+            <PaintGroupHighlightMap>
+              <option name="paintGroups">
+                <map>
+                  <entry key="0">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                  <entry key="1">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                  <entry key="2">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                  <entry key="3">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </PaintGroupHighlightMap>
+          </value>
+        </entry>
+        <entry key="$PROJECT_DIR$/app/src/main/java/com/github/stargarner/stargarnercon/MainActivity.kt">
+          <value>
+            <PaintGroupHighlightMap>
+              <option name="paintGroups">
+                <map>
+                  <entry key="0">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                  <entry key="1">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                  <entry key="2">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                  <entry key="3">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </PaintGroupHighlightMap>
+          </value>
+        </entry>
+        <entry key="$PROJECT_DIR$/app/src/main/java/com/github/stargarner/stargarnercon/ScopedActivity.kt">
+          <value>
+            <PaintGroupHighlightMap>
+              <option name="paintGroups">
+                <map>
+                  <entry key="0">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                  <entry key="1">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                  <entry key="2">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                  <entry key="3">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </PaintGroupHighlightMap>
+          </value>
+        </entry>
+        <entry key="$PROJECT_DIR$/app/src/main/java/com/github/stargarner/stargarnercon/Utils.kt">
+          <value>
+            <PaintGroupHighlightMap>
+              <option name="paintGroups">
+                <map>
+                  <entry key="0">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                  <entry key="1">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                  <entry key="2">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                  <entry key="3">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </PaintGroupHighlightMap>
+          </value>
+        </entry>
+        <entry key="$PROJECT_DIR$/app/src/main/res/layout/activity_main.xml">
+          <value>
+            <PaintGroupHighlightMap>
+              <option name="paintGroups">
+                <map>
+                  <entry key="0">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                  <entry key="1">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                  <entry key="2">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                  <entry key="3">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </PaintGroupHighlightMap>
+          </value>
+        </entry>
+        <entry key="$PROJECT_DIR$/app/src/main/res/layout/dlg_text_input.xml">
+          <value>
+            <PaintGroupHighlightMap>
+              <option name="paintGroups">
+                <map>
+                  <entry key="0">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                  <entry key="1">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                  <entry key="2">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                  <entry key="3">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </PaintGroupHighlightMap>
+          </value>
+        </entry>
+        <entry key="$PROJECT_DIR$/app/src/main/res/values/strings.xml">
+          <value>
+            <PaintGroupHighlightMap>
+              <option name="paintGroups">
+                <map>
+                  <entry key="0">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                  <entry key="1">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                  <entry key="2">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                  <entry key="3">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </PaintGroupHighlightMap>
+          </value>
+        </entry>
+        <entry key="$PROJECT_DIR$/build.gradle">
+          <value>
+            <PaintGroupHighlightMap>
+              <option name="paintGroups">
+                <map>
+                  <entry key="0">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                  <entry key="1">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                  <entry key="2">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                  <entry key="3">
+                    <value>
+                      <EditorHighlightsForPaintGroup />
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </PaintGroupHighlightMap>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>

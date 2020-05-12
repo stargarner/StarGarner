@@ -68,14 +68,5 @@ namespace StarGarner.Util {
             list.ForEach( x => x.dumpTo( sb ) );
             return sb.ToString();
         }
-
-        public static void textOrGone(TextBlock tb, String str) {
-            tb.Text = str;
-            tb.Visibility = str.Length switch
-            {
-                0 => Visibility.Collapsed,
-                _ => Visibility.Visible
-            };
-        }
     }
 }

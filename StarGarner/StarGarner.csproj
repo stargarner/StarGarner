@@ -40,7 +40,9 @@
     <PackageReference Include="CefSharp.Wpf" Version="79.1.360" />
     <PackageReference Include="NAudio" Version="1.10.0" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-    <PackageReference Include="uHttpSharp" Version="0.1.6.22" />
+    <PackageReference Include="uHttpSharp" Version="0.1.6.22">
+      <NoWarn>NU1701</NoWarn>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>

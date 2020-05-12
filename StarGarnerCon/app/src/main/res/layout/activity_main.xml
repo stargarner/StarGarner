@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".MainActivity">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:text="@string/server" />
+
+        <TextView
+            android:id="@+id/tvServer"
+            android:layout_width="0dp"
+            android:textColor="#000"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="@string/server_hint" />
+
+        <ImageButton
+            android:id="@+id/ibServerEdit"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:contentDescription="@string/edit"
+            android:src="@drawable/ic_edit" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:text="@string/start_time_star" />
+
+        <TextView
+            android:id="@+id/tvStartTimeStar"
+            android:layout_width="0dp"
+            android:textColor="#000"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            />
+
+        <ImageButton
+            android:id="@+id/ibStartTimeEditStar"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:contentDescription="@string/edit"
+            android:src="@drawable/ic_edit" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:text="@string/start_time_seed" />
+
+        <TextView
+            android:id="@+id/tvStartTimeSeed"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:textColor="#000"
+            android:layout_weight="1"
+           />
+
+        <ImageButton
+            android:id="@+id/ibStartTimeEditSeed"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:contentDescription="@string/edit"
+            android:src="@drawable/ic_edit" />
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvHistoryStar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#000"
+                android:background="#B5FFF2" />
+            <TextView
+                android:id="@+id/tvHistorySeed"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#000"
+                android:background="#9DFDFF" />
+            <TextView
+                android:id="@+id/tvStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#000"
+                tools:text="aaa"
+                android:background="#E6FF9C" />
+
+            <TextView
+                android:id="@+id/tvWaitReason"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#000"
+                android:textColorLink="#00F"
+                android:background="#FFF69C" />
+
+            <TextView
+                android:id="@+id/tvOpenReason"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#000"
+                android:background="#FFD99C" />
+
+            <TextView
+                android:id="@+id/tvCloseReason"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#000"
+                android:background="#FFC49C" />
+        </LinearLayout>
+    </ScrollView>
+
+</LinearLayout>

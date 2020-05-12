@@ -119,10 +119,13 @@ namespace StarGarner {
 
                 foreach (JObject genre in JToken.Parse( content ).Value<JArray>( "onlives" )) {
                     foreach (JObject live in genre.Value<JArray>( "lives" )) {
-                        var roomId = live.Value<Int64>( "room_id" );
-                        var startedAt = live.Value<Int64>( "started_at" );
                         var roomUrlKey = live.Value<String>( "room_url_key" );
-                        var officialLevel = live.Value<Int32>( "official_lv" );
+                        var roomId = live.Value<Int64?>( "room_id" ) ?? -1L;
+                        var startedAt = live.Value<Int64?>( "started_at" ) ?? -1L;
+                        var officialLevel = live.Value<Int32?>( "official_lv" ) ?? -1;
+
+                        if (roomId < 0 || startedAt < 0 || officialLevel < 0)
+                            continue;
 
                         if (startedAt > now || roomUrlKey == null)
                             continue;

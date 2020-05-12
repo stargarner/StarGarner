@@ -24,10 +24,10 @@ namespace StarGarner.Model {
 
             public static Item? decodeJson(JObject item) {
                 try {
-                    return new Item(
-                        Int64.Parse( item.Value<String>( Config.KEY_TIME ) ),
-                        item.Value<Int32>( Config.KEY_COUNT )
-                        );
+                    var time = item.Value<String?>( Config.KEY_TIME ) ?? throw new Exception( "missing time" );
+                    var count = item.Value<Int32?>( Config.KEY_COUNT ) ?? throw new Exception( "missing count" );
+
+                    return new Item( Int64.Parse(time),count);
                 } catch (Exception ex) {
                     Log.e( ex, "History.decodeJson failed." );
                     return null;

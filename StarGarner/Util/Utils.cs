@@ -7,6 +7,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Threading;
 using uhttpsharp;
@@ -53,15 +54,37 @@ namespace StarGarner.Util {
 #nullable disable
         public static T elementOrNull<T>(this List<T> list, Int32 index) {
             try {
-                return list[ index ];
+                return (index < 0 || index >= list.Count) ? default : list[ index ];
             } catch (Exception) {
                 return default;
             }
         }
         public static T firstOrNull<T>(this List<T> list) => list.elementOrNull( 0 );
         public static T lastOrNull<T>(this List<T> list) => list.elementOrNull( list.Count - 1 );
-#nullable enable
 
+        public static T GetOrNull<T>(this WeakReference<T> wr) where T : class {
+            wr.TryGetTarget( out var d );
+            return d;
+        }
+
+        public static void textOrGone(this TextBlock tb, String str) {
+            tb.Text = str;
+            tb.Visibility = str.Length switch
+            {
+                0 => Visibility.Collapsed,
+                _ => Visibility.Visible
+            };
+        }
+
+        public static void textOrGone(this TextBox tb, String str) {
+            tb.Text = str;
+            tb.Visibility = str.Length switch
+            {
+                0 => Visibility.Collapsed,
+                _ => Visibility.Visible
+            };
+        }
+#nullable enable
 
         private const Int32 GWL_STYLE = -16,
                        WS_MAXIMIZEBOX = 0x10000,
@@ -115,5 +138,7 @@ namespace StarGarner.Util {
             } );
             return taskCompletionSource.Task;
         }
+
+      
     }
 }

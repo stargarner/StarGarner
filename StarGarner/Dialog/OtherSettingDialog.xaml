@@ -61,24 +61,31 @@
                         <CheckBox
                             x:Name="cbListen"
                             x:FieldModifier="private"
-                            Content="内蔵HTTPサーバ" />
+                            Content="内蔵HTTPサーバ(スマホ連携用)" />
                     </GroupBox.Header>
 
                     <StackPanel Orientation="Vertical">
-                        <Label Content="待機アドレス" />
+                        <Label
+                            Margin="0,4,0,0"
+                            Content="待機アドレス(例: 0.0.0.0 )" />
                         <TextBox
                             x:Name="tbListenAddress"
                             x:FieldModifier="private" />
 
-                        <Label Content="待機ポート" />
+                        <Label
+                            Margin="0,4,0,0"
+                            Content="待機ポート(例: 8485)" />
                         <TextBox
                             x:Name="tbListenPort"
                             x:FieldModifier="private" />
 
-                        <TextBlock
+                        <TextBox
                             x:Name="tbListenError"
+                            Margin="0,4,0,0"
                             x:FieldModifier="private"
-                            Foreground="Red" />
+                            BorderThickness="0"
+                            IsReadOnly="True"
+                            Visibility="Collapsed" />
                     </StackPanel>
                 </GroupBox>
 

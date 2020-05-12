@@ -1,5 +1,6 @@
 ﻿using CefSharp;
 using CefSharp.Wpf;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using StarGarner.Dialog;
 using StarGarner.Model;
@@ -7,9 +8,11 @@ using StarGarner.Util;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Threading;
 using uhttpsharp;
 
@@ -64,15 +67,6 @@ namespace StarGarner {
             set => Interlocked.Exchange( ref _lastHttpRequest, value );
         }
 
-        internal Task onStatus(IHttpContext httpContext)
-            => Dispatcher.RunAsync( () =>
-            httpContext.Response = new HttpResponse(
-                HttpResponseCode.Ok,
-                $"日本語ABC!!",
-                closeConnection: true
-        ) );
-
-
 
         //###################################################
 
@@ -89,7 +83,7 @@ namespace StarGarner {
 
             currentRoom = null;
             cefBrowser.Address = Config.URL_TOP;
-            StatusCollection.textOrGone( tbCloseReason, Config.PREFIX_CLOSE_REASON + reason );
+            tbCloseReason.textOrGone( Config.PREFIX_CLOSE_REASON + reason );
         }
 
         // 部屋を開く
@@ -104,8 +98,8 @@ namespace StarGarner {
                 }
                 currentRoom = room;
                 cefBrowser.Address = Config.URL_TOP + room.roomUrlKey;
-                StatusCollection.textOrGone( tbOpenReason, Config.PREFIX_OPEN_REASON + openReason );
-                StatusCollection.textOrGone( tbCloseReason, "" );
+                tbOpenReason.textOrGone( Config.PREFIX_OPEN_REASON + openReason );
+                tbCloseReason.textOrGone( "" );
             }
 
             if (rooms != null) {
@@ -133,12 +127,12 @@ namespace StarGarner {
 
             switch (isLogin) {
             case -1:
-                StatusCollection.textOrGone( tbStatus, "ログイン状態不明" );
-                StatusCollection.textOrGone( tbWaitReason, "" );
+                tbStatus.textOrGone( "ログイン状態不明" );
+                tbWaitReason.textOrGone( "" );
                 return;
             case 0:
-                StatusCollection.textOrGone( tbStatus, "ログインしてください。パスワード認証だけ使えます。TwitterやFacebook連携でのログインには対応してません。" );
-                StatusCollection.textOrGone( tbWaitReason, "" );
+                tbStatus.textOrGone( "ログインしてください。パスワード認証だけ使えます。TwitterやFacebook連携でのログインには対応してません。" );
+                tbWaitReason.textOrGone( "" );
                 return;
             }
 
@@ -293,9 +287,11 @@ namespace StarGarner {
                 var tmpStarCounts = new Dictionary<Int32, Int32>();
                 var tmpSeedCounts = new Dictionary<Int32, Int32>();
                 foreach (var gift in gifts) {
-                    var giftId = gift.Value<Int32>( "gift_id" );
-                    var freeNum = gift.Value<Int32>( "free_num" );
+                    var giftId = gift.Value<Int32?>( "gift_id" ) ?? -1;
+                    var freeNum = gift.Value<Int32?>( "free_num" ) ?? -1;
                     // htmlから読んだ時だけある var giftName = gift.Value<String>( "gift_name" );
+                    if (giftId <0 || freeNum<0)
+                        continue;
 
                     if (Config.starIds.Contains( giftId )) {
                         tmpStarCounts[ giftId ] = freeNum;
@@ -373,6 +369,105 @@ namespace StarGarner {
         } );
 
         //######################################################
+        // アプリ内HTTPサーバからのイベント
+
+        private HttpResponse newResponse(String msg, HttpResponseCode code = HttpResponseCode.Ok)
+            => new HttpResponse( code, msg, closeConnection: true );
+
+        internal Task onHttpStatus(IHttpContext httpContext)
+            => Dispatcher.RunAsync( () => {
+                if (isClosed) {
+                    httpContext.Response = newResponse( "window closed.", HttpResponseCode.InternalServerError );
+                    return;
+                }
+                var dst = new JObject {
+                    { "isLogin", isLogin },
+                    { "historyStar", tbHistoryStar.Text },
+                    { "historySeed", tbHistorySeed.Text },
+                    { "startTimeStar", tbStartTimeStar.Text },
+                    { "startTimeSeed", tbStartTimeSeed.Text },
+                    { "status", tbStatus.Text },
+                    { "waitReason", tbWaitReason.Text },
+                    { "openReason", tbOpenReason.Text },
+                    { "closeReason", tbCloseReason.Text }
+                };
+                httpContext.Response = newResponse( dst.ToString( Formatting.None ) );
+            } );
+
+        internal Task onHttpStartTime(IHttpContext httpContext)
+            => Dispatcher.RunAsync( () => {
+                if (isClosed) {
+                    httpContext.Response = newResponse( "window closed.", HttpResponseCode.InternalServerError );
+                    return;
+                }
+
+                JToken root;
+                try {
+                    root = JToken.Parse( Encoding.UTF8.GetString( httpContext.Request.Post.Raw ) );
+                } catch (Exception ex) {
+                    Log.e( ex, "parse error." );
+                    httpContext.Response = newResponse( "can't parse request body", HttpResponseCode.BadRequest );
+                    return;
+                }
+                var kind = root.Value<String?>( "kind" );
+                var value = root.Value<String?>( "value" );
+                if (value == null) {
+                    httpContext.Response = newResponse( "mising parameter 'value'", HttpResponseCode.BadRequest );
+                    return;
+                }
+
+                void updateStartText(Garner garner, TextBox tb) => tb.Text = value;
+
+                switch (kind ?? "") {
+                case "star":
+                    updateStartText( starGarner, tbStartTimeStar );
+                    break;
+                case "seed":
+                    updateStartText( seedGarner, tbStartTimeSeed );
+                    break;
+                default:
+                    httpContext.Response = newResponse( "incorrect parameter 'kind'", HttpResponseCode.BadRequest );
+                    return;
+                }
+
+                httpContext.Response = newResponse( "accepted.", HttpResponseCode.Accepted );
+            } );
+
+        internal Task onHttpForceOpen(IHttpContext httpContext)
+            => Dispatcher.RunAsync( () => {
+                if (isClosed) {
+                    httpContext.Response = newResponse( "window closed.", HttpResponseCode.InternalServerError );
+                    return;
+                }
+
+                JToken root;
+                try {
+                    root = JToken.Parse( Encoding.UTF8.GetString( httpContext.Request.Post.Raw ) );
+                } catch (Exception ex) {
+                    Log.e( ex, "parse error." );
+                    httpContext.Response = newResponse( "can't parse request body", HttpResponseCode.BadRequest );
+                    return;
+                }
+
+                static void forceOpen(Garner garner, TextBox tb)
+                    => garner.forceOpenReason = "「強制的に開く」が押された";
+
+                switch (root.Value<String?>( "kind" ) ?? "") {
+                case "star":
+                    forceOpen( starGarner, tbStartTimeStar );
+                    break;
+                case "seed":
+                    forceOpen( seedGarner, tbStartTimeSeed );
+                    break;
+                default:
+                    httpContext.Response = newResponse( "incorrect parameter 'kind'", HttpResponseCode.BadRequest );
+                    return;
+                }
+
+                httpContext.Response = newResponse( "accepted.", HttpResponseCode.Accepted );
+            } );
+
+        //######################################################
         // save/load UI state
 
         private void saveUI()
@@ -428,10 +523,9 @@ namespace StarGarner {
         internal WeakReference<OtherSettingDialog>? refSettingDialogOther;
 
         private void openGarnerSetting(Garner garner, ref WeakReference<GarnerSettingDialog>? refSettingDialog) {
-            GarnerSettingDialog? dialog = null;
-            refSettingDialog?.TryGetTarget( out dialog );
-            if (dialog != null && dialog.isClosed == false) {
-                dialog.Activate();
+            var d = refSettingDialog?.GetOrNull();
+            if (d != null && d.isClosed == false) {
+                d.Activate();
                 return;
             }
 
@@ -456,10 +550,9 @@ namespace StarGarner {
         } );
 
         private void openOtherSetting() {
-            OtherSettingDialog? dialog = null;
-            refSettingDialogOther?.TryGetTarget( out dialog );
-            if (dialog != null && dialog.isClosed == false) {
-                dialog.Activate();
+            var d = refSettingDialogOther?.GetOrNull();
+            if (d != null && d.isClosed == false) {
+                d.Activate();
                 return;
             }
 

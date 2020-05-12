@@ -1,5 +1,7 @@
 ﻿using StarGarner.Util;
 using System;
+using System.Collections.Generic;
+using System.Net;
 using System.Windows;
 
 namespace StarGarner.Dialog {
@@ -61,9 +63,10 @@ namespace StarGarner.Dialog {
         }
 
         internal void showServerStatus() => Dispatcher.BeginInvoke( (Action)( () => {
-            var sv = mainWindow?.httpServer.serverError ?? "";
-            tbListenError.Visibility = sv.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
-            tbListenError.Text = sv;
+            if (isClosed)
+                return;
+            var sv = mainWindow?.httpServer.serverStatus ?? "";
+            tbListenError.textOrGone( sv );
         } ) );
 
 
@@ -73,6 +76,8 @@ namespace StarGarner.Dialog {
             isClosed = true;
             base.OnClosed( e );
         }
+
+
 
         public OtherSettingDialog(MainWindow main) {
             InitializeComponent();
