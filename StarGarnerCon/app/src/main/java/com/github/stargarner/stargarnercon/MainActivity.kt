@@ -2,13 +2,13 @@ package com.github.stargarner.stargarnercon
 
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.os.SystemClock
 import android.text.SpannableStringBuilder
 import android.text.Spanned
 import android.text.style.ClickableSpan
 import android.view.View
 import android.widget.ImageButton
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.coroutines.*
 import okhttp3.MediaType.Companion.toMediaType
@@ -21,10 +21,9 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
     companion object {
         private const val KEY_LAST_SERVER = "lastServer"
 
-        private val log = LogTag("${App1.TAG}:MainActivity")
+        private val log = LogTag("StarGarnerCon")
 
         private var reServerName = """\A([^:/#?]+|\[[:\dA-Fa-f]+]):\d+\z""".toRegex()
-
     }
 
     private lateinit var activityJob: Job
@@ -34,26 +33,30 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 
     private lateinit var tvServer: TextView
     private lateinit var ibServerEdit: ImageButton
+
     private lateinit var tvStartTimeStar: TextView
     private lateinit var ibStartTimeEditStar: ImageButton
+
     private lateinit var tvStartTimeSeed: TextView
     private lateinit var ibStartTimeEditSeed: ImageButton
+
     private lateinit var tvHistoryStar: TextView
     private lateinit var tvHistorySeed: TextView
     private lateinit var tvStatus: TextView
-
     private lateinit var tvWaitReason: TextView
     private lateinit var tvOpenReason: TextView
     private lateinit var tvCloseReason: TextView
 
+    private lateinit var pref: SharedPreferences
+
     @Volatile
     private var server: String = ""
-    private lateinit var pref: SharedPreferences
 
     private var statusJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         activityJob = Job()
 
         this.pref = getSharedPreferences("AppData", MODE_PRIVATE)
@@ -75,7 +78,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         val sv = pref.getString(KEY_LAST_SERVER, null)
         if (sv != null) {
             tvServer.text = sv
-            server = tvServer.text.toString().trim()
+            server = sv.trim()
         }
 
         ibServerEdit.setOnClickListener {
@@ -90,13 +93,23 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
             ) { sv ->
                 pref.edit().putString(KEY_LAST_SERVER, sv).apply()
                 tvServer.text = sv
-                this.server = sv.trim()
+                server = sv.trim()
             }
         }
 
-        ibStartTimeEditStar.setOnClickListener { editStartTime("star", tvStartTimeStar) }
-        ibStartTimeEditSeed.setOnClickListener { editStartTime("seed", tvStartTimeSeed) }
-        tvWaitReason.text = "" // 復元時にリンクが失われるので再生成
+        ibStartTimeEditStar.setOnClickListener {
+            editStartTime(
+                "star",
+                tvStartTimeStar.text.toString()
+            )
+        }
+
+        ibStartTimeEditSeed.setOnClickListener {
+            editStartTime(
+                "seed",
+                tvStartTimeSeed.text.toString()
+            )
+        }
 
         showStatus(JSONObject().apply { put("error", "initializing…") })
     }
@@ -108,7 +121,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 
     override fun onStart() {
         super.onStart()
-        statusJob = launch(Dispatchers.Default) { loadStatus() }
+        statusJob = launch(Dispatchers.Default) { loopStatus() }
     }
 
     override fun onStop() {
@@ -165,12 +178,13 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         }
     }
 
-    private suspend fun loadStatus() {
+    private suspend fun loopStatus() {
         while (coroutineContext[Job]?.isCancelled == false) {
+            val timeStart = SystemClock.elapsedRealtime()
             try {
                 val status = try {
                     if (server.isEmpty()) error("server is not specified.")
-                    val url = "http://${server}/status"
+                    val url = "http://${server}/status?_=$timeStart"
                     val response = Request.Builder().url(url).build().call().await()
                     if (!response.isSuccessful) error("response error: $response")
                     @Suppress("BlockingMethodInNonBlockingContext")
@@ -187,11 +201,15 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
             } catch (ex: Throwable) {
                 log.e(ex)
             } finally {
-                delay(1000L)
+                val remain = timeStart + 1000L - SystemClock.elapsedRealtime()
+                if (remain > 0) delay(remain)
             }
         }
     }
 
+    private fun CharSequence.toast() = toast(this@MainActivity)
+
+    // 入力テキストの「強制的に開く」をリンク化する
     private fun linkForceOpen(src: String) = SpannableStringBuilder().also { dst ->
         for (line in src.split("\n")) {
             if (dst.isNotEmpty()) dst.append("\n")
@@ -202,66 +220,55 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
                 else -> null
             }
             val linkWord = "強制的に開く"
-            if (kind != null && line.endsWith(linkWord)) {
-                dst.setSpan(
-                    object : ClickableSpan() {
-                        override fun onClick(v: View) {
-                            launch(Dispatchers.Default) {
-                                try {
-                                    val url = "http://${server}/forceOpen"
-                                    val response = Request.Builder().url(url)
-                                        .post(
-                                            JSONObject().apply { put("kind", kind) }
-                                                .toString()
-                                                .toRequestBody("application/json".toMediaType())
-                                        )
+            if (kind == null || !line.endsWith(linkWord)) continue
+            dst.setSpan(
+                object : ClickableSpan() {
+                    override fun onClick(v: View) {
+                        launch(Dispatchers.Default) {
+                            try {
+                                val url = "http://${server}/forceOpen"
+                                val response =
+                                    JSONObject().apply { put("kind", kind) }
+                                        .toString()
+                                        .toRequestBody("application/json".toMediaType())
+                                        .toPostRequestBuilder()
+                                        .url(url)
                                         .build().call().await()
-                                    if (!response.isSuccessful) error("response error: $response")
-                                } catch (ex: Throwable) {
-                                    log.e(ex, "can't send forceOpen")
-                                    Toast.makeText(
-                                        this@MainActivity,
-                                        ex.withCaption("can't send forceOpen"),
-                                        Toast.LENGTH_LONG
-                                    ).show()
-                                }
+                                if (!response.isSuccessful) error("response error: $response")
+                            } catch (ex: Throwable) {
+                                log.e(ex, "can't send forceOpen")
+                                ex.withCaption("can't post forceOpen.").toast()
                             }
                         }
-                    },
-                    dst.length - linkWord.length,
-                    dst.length,
-                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-                )
-            }
+                    }
+                },
+                dst.length - linkWord.length,
+                dst.length,
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
         }
     }
 
-
-    private fun editStartTime(kind: String, tv: TextView) {
-        textDialog(this, tv.text.toString()) { sv ->
+    // 配信開始時刻を編集して送信する
+    private fun editStartTime(kind: String, initialText: String) {
+        textDialog(this, initialText) { newText ->
             launch(Dispatchers.IO) {
                 try {
                     val url = "http://${server}/startTime"
-                    val response = Request.Builder().url(url)
-                        .post(
-                            JSONObject().apply {
-                                put("kind", kind)
-                                put("value", sv)
-                            }
-                                .toString().toRequestBody("application/json".toMediaType())
-                        )
-                        .build().call().await()
+                    val response =
+                        JSONObject().apply {
+                            put("kind", kind)
+                            put("value", newText)
+                        }
+                            .toString()
+                            .toRequestBody("application/json".toMediaType())
+                            .toPostRequestBuilder()
+                            .url(url)
+                            .build().call().await()
                     if (!response.isSuccessful) error("response error: $response")
-                    withContext(Dispatchers.Main) {
-                        tv.text = sv
-                    }
                 } catch (ex: Throwable) {
                     log.e(ex)
-                    Toast.makeText(
-                        this@MainActivity,
-                        ex.withCaption("can't send startTime"),
-                        Toast.LENGTH_LONG
-                    ).show()
+                    ex.withCaption("can't post startTime.").toast()
                 }
             }
         }
