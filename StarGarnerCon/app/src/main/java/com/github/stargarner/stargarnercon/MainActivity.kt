@@ -131,7 +131,8 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
                 ibStartTimeEditStar.enableAlpha(false)
                 ibStartTimeEditSeed.enableAlpha(false)
             }
-            !status.optBoolean("isLogin") -> {
+
+            status.optInt("isLogin") != 1 -> {
                 tvStatus.setTextIfChanged("接続先があのサイトにログインしていません")
                 tvStartTimeStar.setTextIfChanged("", goneIfEmpty = false)
                 tvStartTimeSeed.setTextIfChanged("", goneIfEmpty = false)
