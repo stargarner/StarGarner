@@ -168,5 +168,5 @@ PCで動かしてるStarGarnerを外部から制御するAndroidアプリです�
 ### 導入手順
 - PCで動かしてるStarGarnerの「設定/他」を開いて「内蔵HTTPサーバ」を有効にして待機アドレスと待機ポートを適当に指定して「適用」を押します。
 - 「listening {addr} port {port}」が表示されなかったら、エラー表示を見て適当になんとかしてください。
-- リリースに同梱されている「StarGarnerCon-….apk」をAndroidスマホに転送してスマホから開いてインストールします。
+- リリースに同梱されている「StarGarnerCon-{…}.apk」をAndroidスマホに転送してスマホから開いてインストールします。
 - AndroidスマホでStarGarnerConアプリを開いて接続先にアドレスとポートを「:」で区切って入力します。
