@@ -249,7 +249,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
                                         .build().call().await()
                                 if (!response.isSuccessful) error("response error: $response")
                             } catch (ex: Throwable) {
-                                log.e(ex, "can't send forceOpen")
+                                log.e(ex, "can't post forceOpen")
                                 ex.withCaption("can't post forceOpen.").toast()
                             }
                         }
@@ -280,7 +280,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
                             .build().call().await()
                     if (!response.isSuccessful) error("response error: $response")
                 } catch (ex: Throwable) {
-                    log.e(ex)
+                    log.e(ex, "can't post startTime.")
                     ex.withCaption("can't post startTime.").toast()
                 }
             }

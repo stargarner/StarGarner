@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 
 namespace StarGarner {
     public class NotificationSound : IDisposable {
@@ -23,25 +24,28 @@ namespace StarGarner {
             return dst;
         }
 
-        private static readonly String soundDir = findSoundDirectory();
+        private static readonly String? soundDir = findSoundDirectory();
 
         // CWDから上に辿ってsoundフォルダを探す
-        private static String findSoundDirectory() {
-            var d = Directory.GetCurrentDirectory();
-            while (true) {
-                var soundDir = Path.Combine( d, "sound" );
-                if (Directory.Exists( soundDir ))
-                    return soundDir;
-                try {
-                    var di = Directory.GetParent( d );
-                    if (di == null)
-                        throw new DirectoryNotFoundException( "can't find parent directory." );
-                    d = di.FullName;
-                } catch (Exception ex) {
-                    Log.e( ex, "findSoundDirectory failed." );
-                    throw ex;
+        private static String? findSoundDirectory() {
+            String? sub(String? d) {
+                while (d != null) {
+
+                    var soundDir = Path.Combine( d, "sound" );
+
+                    if (Directory.Exists( soundDir ))
+                        return soundDir;
+
+                    try {
+                        d = Directory.GetParent( d )?.FullName;
+                    } catch (Exception ex) {
+                        Log.e( ex, "Directory.GetParent failed." );
+                        break;
+                    }
                 }
+                return null;
             }
+            return sub( Directory.GetCurrentDirectory() ) ?? sub( Assembly.GetEntryAssembly().Location );
         }
 
         public static readonly List<String> actors = new List<String>() {
@@ -51,9 +55,9 @@ namespace StarGarner {
         private static readonly HashSet<String> actorsMap = actors.ToHashSet();
 
         private static String? getSoundFile(String actorName, String file)
-            => actorName == "none" || !actorsMap.Contains( actorName )
-            ? null
-            : $"{soundDir}/{actorName}-{file}";
+            => soundDir == null ? null :
+                actorName == "none" || !actorsMap.Contains( actorName ) ? null :
+                $"{soundDir}/{actorName}-{file}";
 
         public class PlayingInfo : IDisposable {
             AudioFileReader? reader;

@@ -90,14 +90,15 @@ suspend fun Call.await(): Response {
     }
 }
 
-@SuppressLint("InflateParams")
 fun textDialog(
     activity: AppCompatActivity,
     initialText: String,
     validate: (String) -> String? = { null },
     onOk: (String) -> Unit
 ) {
+    @SuppressLint("InflateParams")
     val view = activity.layoutInflater.inflate(R.layout.dlg_text_input, null, false)
+
     val editText: EditText = view.findViewById(R.id.editText)
     val btnCancel: View = view.findViewById(R.id.btnCancel)
     val btnOk: View = view.findViewById(R.id.btnOk)
@@ -109,18 +110,8 @@ fun textDialog(
         tvError.setTextIfChanged(error ?: "")
     }
 
-    val dialog = Dialog(activity)
-
     editText.setText(initialText)
-
-    btnCancel.setOnClickListener {
-        dialog.dismiss()
-    }
-
-    btnOk.setOnClickListener {
-        onOk(editText.text.toString())
-        dialog.dismiss()
-    }
+    fireValidate()
 
     editText.addTextChangedListener(object : TextWatcher {
         override fun beforeTextChanged(
@@ -139,7 +130,17 @@ fun textDialog(
         }
     })
 
-    fireValidate()
+    val dialog = Dialog(activity)
+
+    btnCancel.setOnClickListener {
+        dialog.dismiss()
+    }
+
+    btnOk.setOnClickListener {
+        onOk(editText.text.toString())
+        dialog.dismiss()
+    }
+
     dialog.setContentView(view)
     dialog.show()
 }
