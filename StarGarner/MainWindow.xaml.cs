@@ -592,7 +592,8 @@ namespace StarGarner {
             /// an In-Memory cache is used by default( similar to Incogneto).
             using var settings = new CefSettings() {
                 WindowlessRenderingEnabled = true,
-                LogSeverity = LogSeverity.Default,
+                LogFile = $"{Directory.GetCurrentDirectory()}/Debug.log", //You can customise this path
+                LogSeverity = LogSeverity.Disable, // You can change the log level
                 Locale = "ja",
                 AcceptLanguageList = "ja-JP",
                 CachePath = "cache",
