@@ -22,23 +22,32 @@ namespace StarGarner {
         internal Boolean isRunning => !process.HasExited;
 
         static readonly Regex reSpaces = new Regex( @"\s+" );
-        static readonly Regex reSpeed = new Regex( @"\s*speed=[\s\d.]+x\s*\z|\s*q=-1\.0\b" );
+        static readonly Regex reSpeed = new Regex( @"\s*\bspeed=[\s\d.]+x\s*\z|\s*q=-1\.0\b" );
+        static readonly Regex reFps= new Regex( @"\s*\bfps=\s*(\d+)" );
 
 
         private async Task readStream(StreamReader sr) {
             try {
-                Log.d( "readStream start." );
                 while (true) {
                     var line = await sr.ReadLineAsync();
                     if (line == null)
                         break;
+
                     // not log
                     if (line.Contains( " Skip " ) || line.Contains( " Opening " )) {
                         continue;
                     }
-                    line = reSpeed.Replace( reSpaces.Replace( line, " " ), "" );
 
-                    Log.d( line );
+                    line = reSpeed.Replace( reSpaces.Replace( line, " " ), "" );
+                    var m = reFps.Match( line );
+
+                    var fps = m.Success ? Int32.Parse( m.Groups[ 1 ].Value ) : -1;
+                    if (fps >= 1) {
+                        // not log, but show in status window
+                    } else {
+                        Log.d( line );
+                    }
+
                     lock (lines) {
                         lines.AddLast( line );
                         if (lines.Count > 10)
@@ -69,14 +78,18 @@ namespace StarGarner {
             var p = new Process();
             p.StartInfo.CreateNoWindow = true;
             p.StartInfo.FileName = hub.ffmpegPath;
-            p.StartInfo.Arguments = $"-loglevel info -timeout 30000 -user_agent \"{Config.userAgent}\" -i \"{url}\" -c copy \"{ file}\"";
+            p.StartInfo.Arguments = $"-nostdin -hide_banner -loglevel info -timeout 30000 -user_agent \"{Config.userAgent}\" -i \"{url}\" -c copy \"{ file}\"";
             p.StartInfo.UseShellExecute = false; // require to read output
             p.StartInfo.RedirectStandardOutput = true;
             p.StartInfo.RedirectStandardError = true;
+            p.EnableRaisingEvents = true;
+            p.Exited += (sender, args) => {
+                Log.d( $"{roomName}: process Exited." );
+                hub.showStatus();
+            };
             p.Start();
             Task.Run( async () => await readStream( p.StandardOutput ) );
             Task.Run( async () => await readStream( p.StandardError ) );
-            p.Exited += (sender, args) => hub.showStatus();
             this.process = p;
             hub.showStatus();
         }
@@ -84,10 +97,11 @@ namespace StarGarner {
         public void Dispose() {
             try {
                 if (!process.HasExited) {
+                    Log.d( $"{roomName}: Dispose: call Kill()." );
                     process.Kill();
                 }
             } catch (Exception ex) {
-                Log.e( ex, "Dispose has error" );
+                Log.e( ex, "Dispose error." );
             }
         }
 
@@ -132,6 +146,7 @@ namespace StarGarner {
         internal Boolean isRecordingUi;
 
         internal Recording? recording = null;
+
         private Int64 nextCheckTime = 0L;
         private Task? lastCheckTask = null;
 
