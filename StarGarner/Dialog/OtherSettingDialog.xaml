@@ -7,6 +7,7 @@
     Title="その他の設定"
     Width="640"
     Height="320"
+    SizeToContent="Height"
     WindowStyle="SingleBorderWindow"
     mc:Ignorable="d">
     <DockPanel LastChildFill="True">
@@ -58,6 +59,97 @@
 
                 <GroupBox Margin="4">
                     <GroupBox.Header>
+                        <Label Content="配信の録画" />
+                    </GroupBox.Header>
+                    <StackPanel Orientation="Vertical">
+
+                        <Label
+                            Margin="0,4,0,0"
+                            Content="保存フォルダ" />
+                        <TextBox
+                            x:Name="tbRecordSaveDir"
+                            x:FieldModifier="private" />
+
+
+                        <Label
+                            Margin="0,4,0,0"
+                            Content="ffmpeg.exeのファイルパス" />
+                        <TextBox
+                            x:Name="tbRecordFfmpegPath"
+                            x:FieldModifier="private" />
+
+                        <Label
+                            Margin="0,4,0,0"
+                            Content="録画する部屋" />
+                        <ListBox
+                            x:Name="lbRecord"
+                            MinHeight="0"
+                            MaxHeight="800"
+                            Margin="4"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Top"
+                            x:FieldModifier="private"
+                            SelectionMode="Single">
+                            <ListBox.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem
+                                        Click="lbRecord_View"
+                                        Header="ブラウザで開く" />
+                                    <MenuItem
+                                        Click="lbRecord_Edit"
+                                        Header="編集" />
+                                    <MenuItem
+                                        Click="lbRecord_Delete"
+                                        Header="削除" />
+                                </ContextMenu>
+                            </ListBox.ContextMenu>
+
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Height="32">
+                                        <TextBlock
+                                            VerticalAlignment="Center"
+                                            DockPanel.Dock="Left"
+                                            Text="{Binding Text}"
+                                            TextWrapping="Wrap" />
+                                    </Border>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+
+                        <Grid Margin="0,4,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <Label
+                                Grid.Column="0"
+                                VerticalAlignment="Center"
+                                Content="部屋URL" />
+                            <TextBox
+                                x:Name="tbRoomUrl"
+                                Grid.Column="1"
+                                Height="Auto"
+                                MinHeight="24"
+                                VerticalAlignment="Center"
+                                VerticalContentAlignment="Center"
+                                AcceptsReturn="False"
+                                TextWrapping="NoWrap" />
+                            <Button
+                                x:Name="btnRecordAdd"
+                                Grid.Column="2"
+                                Height="28"
+                                Margin="4"
+                                Padding="4,0,4,0"
+                                x:FieldModifier="private"
+                                Content="追加" />
+                        </Grid>
+                    </StackPanel>
+                </GroupBox>
+                <GroupBox Margin="4">
+                    <GroupBox.Header>
                         <CheckBox
                             x:Name="cbListen"
                             x:FieldModifier="private"
@@ -70,14 +162,18 @@
                             Content="待機アドレス(例: 0.0.0.0 )" />
                         <TextBox
                             x:Name="tbListenAddress"
-                            x:FieldModifier="private" />
+                            x:FieldModifier="private"
+                            AcceptsReturn="False"
+                            TextWrapping="NoWrap" />
 
                         <Label
                             Margin="0,4,0,0"
                             Content="待機ポート(例: 8485)" />
                         <TextBox
                             x:Name="tbListenPort"
-                            x:FieldModifier="private" />
+                            x:FieldModifier="private"
+                            AcceptsReturn="False"
+                            TextWrapping="NoWrap" />
 
                         <TextBox
                             x:Name="tbListenError"
@@ -104,7 +200,6 @@
                             Content="API応答をファイルに保存" />
                     </StackPanel>
                 </GroupBox>
-
             </StackPanel>
         </ScrollViewer>
     </DockPanel>

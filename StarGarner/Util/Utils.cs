@@ -2,6 +2,8 @@
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Data;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -54,7 +56,7 @@ namespace StarGarner.Util {
 #nullable disable
         public static T elementOrNull<T>(this List<T> list, Int32 index) {
             try {
-                return (index < 0 || index >= list.Count) ? default : list[ index ];
+                return ( index < 0 || index >= list.Count ) ? default : list[ index ];
             } catch (Exception) {
                 return default;
             }
@@ -120,7 +122,7 @@ namespace StarGarner.Util {
                 try {
                     action();
                     taskCompletionSource.SetResult( false );
-                }catch(Exception ex) {
+                } catch (Exception ex) {
                     taskCompletionSource.SetException( ex );
                 }
             } );
@@ -139,6 +141,19 @@ namespace StarGarner.Util {
             return taskCompletionSource.Task;
         }
 
-      
+
+        public static Int32 InsertSorted<T>(this ObservableCollection<T> collection, T item) where T : IComparable<T> {
+            for (Int32 i = 0, ie = collection.Count; i < ie; i++) {
+                var result = collection[ i ].CompareTo( item );
+                if (result == 0) {
+                    throw new DuplicateNameException( "既に登録されています" );
+                } else if (result > 0) {
+                    collection.Insert( i, item );
+                    return i;
+                }
+            }
+            collection.Add( item );
+            return collection.Count - 1;
+        }
     }
 }

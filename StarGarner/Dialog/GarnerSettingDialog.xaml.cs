@@ -62,9 +62,12 @@ namespace StarGarner.Dialog {
             base.OnClosed( e );
         }
 
-        public GarnerSettingDialog(Garner garner) {
-            InitializeComponent();
+        public GarnerSettingDialog(Window parent,Garner garner) {
+            this.Owner = parent;
+            this.WindowStartupLocation = WindowStartupLocation.CenterOwner;
             this.SourceInitialized += (x, y) => this.HideMinimizeAndMaximizeButtons();
+
+            InitializeComponent();
 
             this.garner = garner;
 

@@ -73,6 +73,14 @@ namespace StarGarner {
         internal const String KEY_LISTEN_ENABLED = "listenEnabled";
         internal const String KEY_LISTEN_ADDR = "listenAddr";
         internal const String KEY_LISTEN_PORT= "listenPort";
+        internal const String KEY_RECORDER_HUB= "recorderHub";
+
+        internal const String KEY_SAVE_DIR= "saveDir";
+        internal const String KEY_FFMPEG_PATH= "ffmpegPath";
+        internal const String KEY_ROOM_NAME= "roomName";
+        internal const String KEY_ROOM_ID= "roomId";
+        internal const String KEY_ROOM_CAPTION= "roomCaption";
+        internal const String KEY_ROOMS= "rooms";
 
         // garner設定保存キー
         internal const String KEY_EXPIRE_EXCEED = "expireExceed";

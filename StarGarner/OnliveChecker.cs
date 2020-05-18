@@ -44,7 +44,7 @@ namespace StarGarner {
 
                     var url = $"{Config.URL_TOP}api/live/current_user?room_id={ room.roomId }&_={UnixTime.now / 1000L}";
                     var request = new HttpRequestMessage( HttpMethod.Get, url );
-                    request.Headers.Add( "ContentType", "application/json" );
+                    request.Headers.Add( "Accept", "application/json" );
                     request.Headers.Add( "Cookie", cookie );
                     var response = await client.SendAsync( request ).ConfigureAwait( false );
 
@@ -110,19 +110,20 @@ namespace StarGarner {
                 var now = UnixTime.now;
                 var url = $"{Config.URL_TOP}api/live/onlives?skip_serial_code_live=1&_={UnixTime.now / 1000L}";
                 var request = new HttpRequestMessage( HttpMethod.Get, url );
-                request.Headers.Add( "ContentType", "application/json" );
+                request.Headers.Add( "Accept", "application/json" );
                 var response = await client.SendAsync( request ).ConfigureAwait( false );
                 now = UnixTime.now;
                 var content = await response.Content.ReadAsStringAsync().ConfigureAwait( false );
+
                 var tmpStarRooms = new Dictionary<String, Room>();
                 var tmpSeedRooms = new Dictionary<String, Room>();
-
                 foreach (JObject genre in JToken.Parse( content ).Value<JArray>( "onlives" )) {
                     foreach (JObject live in genre.Value<JArray>( "lives" )) {
                         var roomUrlKey = live.Value<String>( "room_url_key" );
                         var roomId = live.Value<Int64?>( "room_id" ) ?? -1L;
                         var startedAt = live.Value<Int64?>( "started_at" ) ?? -1L;
                         var officialLevel = live.Value<Int32?>( "official_lv" ) ?? -1;
+                        var streamingList = live.Value<JArray>( "streaming_url_list" );
 
                         if (roomId < 0 || startedAt < 0 || officialLevel < 0)
                             continue;
@@ -131,9 +132,13 @@ namespace StarGarner {
                             continue;
 
                         if (officialLevel == 0) {
-                            tmpSeedRooms[ roomUrlKey ] = new Room( roomId, roomUrlKey, true, startedAt );
+                            var old = tmpSeedRooms.GetValueOrDefault( roomUrlKey );
+                            tmpSeedRooms[ roomUrlKey ] = new Room(
+                                roomId, roomUrlKey, true, startedAt, streamingList ?? old?.streamingList );
                         } else {
-                            tmpStarRooms[ roomUrlKey ] = new Room( roomId, roomUrlKey, false, startedAt );
+                            var old = tmpStarRooms.GetValueOrDefault( roomUrlKey );
+                            tmpStarRooms[ roomUrlKey ] = new Room(
+                                roomId, roomUrlKey, false, startedAt, streamingList ?? old?.streamingList );
                         }
                     }
                 }
@@ -150,6 +155,8 @@ namespace StarGarner {
                 this.seedRooms = mapToList( tmpSeedRooms );
 
                 runGifCount();
+
+                window.recorderHub.step();
 
             } catch (Exception ex) {
                 Log.e( ex, "load failed." );
@@ -183,5 +190,13 @@ namespace StarGarner {
             this.cookie = cookie;
             runGifCount();
         }
+
+        // 自動録画チェッカーから呼ばれる
+        internal Room? findRoom(String roomName)
+            => findRoom( roomName, starRooms ) ?? findRoom( roomName, seedRooms );
+
+        private Room? findRoom(String roomName, List<Room> list)
+            => list.Find( (x) => x.roomUrlKey == roomName );
+
     }
 }

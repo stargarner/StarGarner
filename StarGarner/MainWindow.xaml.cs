@@ -28,14 +28,16 @@ namespace StarGarner {
         // タイマー
         private readonly DispatcherTimer timer;
 
-        // オンライブ部屋チェッカー
-        private readonly OnliveChecker onLiveChecker;
-
         internal readonly NotificationSound notificationSound = new NotificationSound();
 
         private readonly ScreenKeeper screenKeeper = new ScreenKeeper();
 
+        // オンライブ部屋チェッカー
+        internal readonly OnliveChecker onLiveChecker;
+
         internal readonly MyHttpServer httpServer;
+
+        internal readonly RecorderHub recorderHub;
 
         // ウィンドウを閉じたか
         private Boolean isClosed = false;
@@ -150,6 +152,9 @@ namespace StarGarner {
             var statusB = new StatusCollection();
 
             try {
+
+                recorderHub.dumpStatus( statusA );
+
                 var room = currentRoom;
                 if (room == null) {
 
@@ -478,6 +483,7 @@ namespace StarGarner {
                 { Config.KEY_LISTEN_ENABLED, httpServer.enabled },
                 { Config.KEY_LISTEN_ADDR, httpServer.listenAddr },
                 { Config.KEY_LISTEN_PORT, httpServer.listenPort },
+                { Config.KEY_RECORDER_HUB, recorderHub.encodeSetting() }
             }.saveTo( Config.FILE_UI_JSON );
 
         private void loadUI() {
@@ -508,6 +514,10 @@ namespace StarGarner {
 
                     bv = root.Value<Boolean?>( Config.KEY_RESPONSE_LOG );
                     MyResourceRequestHandler.responseLogEnabled = bv ?? false;
+
+                    var ov = root.Value<JObject>( Config.KEY_RECORDER_HUB );
+                    if (ov != null)
+                        recorderHub.load( ov );
                 }
             } catch (Exception ex) {
                 Log.e( ex, "loadUI failed." );
@@ -530,9 +540,7 @@ namespace StarGarner {
             }
 
             // Instantiate the dialog box
-            var dlg = new GarnerSettingDialog( garner ) {
-                Owner = this
-            };
+            var dlg = new GarnerSettingDialog( this,garner );
             dlg.Show();
             refSettingDialog = new WeakReference<GarnerSettingDialog>( dlg );
         }
@@ -572,12 +580,18 @@ namespace StarGarner {
             }
         } );
 
+
+        internal void showRecorderStatus() => Dispatcher.BeginInvoke(
+            () => refSettingDialogOther?.GetOrNull()?.showRecorderStatus() 
+        );
+
         //######################################################
         // window lifecycle event
 
         protected override void OnClosed(EventArgs e) {
             isClosed = true;
             timer.Stop();
+            recorderHub.Dispose();
             cefBrowser.Dispose();
             base.OnClosed( e );
             Utils.singleTask.complete();
@@ -587,18 +601,21 @@ namespace StarGarner {
         public MainWindow() {
             this.onLiveChecker = new OnliveChecker( this );
             this.httpServer = new MyHttpServer( this );
+            this.recorderHub = new RecorderHub( this );
 
             /// Specifying a CachePath is required for persistence of cookies, saving of passwords, etc
             /// an In-Memory cache is used by default( similar to Incogneto).
             using var settings = new CefSettings() {
-                WindowlessRenderingEnabled = true,
-                LogFile = $"{Directory.GetCurrentDirectory()}/Debug.log", //You can customise this path
-                LogSeverity = LogSeverity.Disable, // You can change the log level
+                LogFile = $"{Directory.GetCurrentDirectory()}/Debug.log",
+                LogSeverity = LogSeverity.Disable,
+
+                UserAgent = Config.userAgent,
+
                 Locale = "ja",
                 AcceptLanguageList = "ja-JP",
+
                 CachePath = "cache",
                 PersistSessionCookies = true,
-                UserAgent = Config.userAgent
             };
 
             Cef.Initialize( settings );
@@ -608,6 +625,8 @@ namespace StarGarner {
             loadUI();
             starGarner.liveStarts.set( tbStartTimeStar.Text );
             seedGarner.liveStarts.set( tbStartTimeSeed.Text );
+
+            showRecorderStatus();
 
 
             var isInInitialize = true;
@@ -646,6 +665,7 @@ namespace StarGarner {
             timer.Tick += (sender, e) => {
                 onLiveChecker.run();
                 step( "timer" );
+                recorderHub.step();
             };
 
             timer.Start();

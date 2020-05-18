@@ -80,9 +80,11 @@
                         HorizontalContentAlignment="Left"
                         VerticalContentAlignment="Center"
                         x:FieldModifier="private"
+                        AcceptsReturn="False"
                         DockPanel.Dock="Right"
                         FontSize="13"
-                        Text="例 20:30+15" />
+                        Text="例 20:30+15"
+                        TextWrapping="NoWrap" />
                 </DockPanel>
                 <DockPanel
                     Grid.Column="3"
@@ -102,10 +104,12 @@
                         HorizontalContentAlignment="Left"
                         VerticalContentAlignment="Center"
                         x:FieldModifier="private"
+                        AcceptsReturn="False"
                         DockPanel.Dock="Right"
                         FontFamily="Yu Gothic Medium"
                         FontSize="13"
-                        Text="例 0:30+15, 3:30+15, 6:30+15, 9:30+15, 12:30+15, 15:30+15, 18:30+15, 21:30+15" />
+                        Text="例 0:30+15, 3:30+15, 6:30+15, 9:30+15, 12:30+15, 15:30+15, 18:30+15, 21:30+15"
+                        TextWrapping="NoWrap" />
                 </DockPanel>
             </Grid>
 

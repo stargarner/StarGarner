@@ -105,7 +105,7 @@ fun textDialog(
     val tvError: TextView = view.findViewById(R.id.tvError)
 
     fun fireValidate() {
-        val error = validate(editText.text.toString())
+        val error = validate(editText.text.toString().trim())
         btnOk.isEnabled = error == null
         tvError.setTextIfChanged(error ?: "")
     }
@@ -137,7 +137,7 @@ fun textDialog(
     }
 
     btnOk.setOnClickListener {
-        onOk(editText.text.toString())
+        onOk(editText.text.toString().trim())
         dialog.dismiss()
     }
 

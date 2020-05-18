@@ -91,28 +91,20 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
                         ?: return@textDialog "接続先が addr:port の形式ではありません"
                     null
                 }
-            ) { sv ->
-                pref.edit().putString(KEY_LAST_SERVER, sv).apply()
-                tvServer.text = sv
-                server = sv.trim()
+            ) {
+                pref.edit().putString(KEY_LAST_SERVER, it).apply()
+                tvServer.text = it
+                server = it.trim()
             }
         }
 
         ibStartTimeEditStar.setOnClickListener {
-            editStartTime(
-                "star",
-                tvStartTimeStar.text.toString()
-            )
+            editStartTime("star", tvStartTimeStar.text.toString())
         }
 
         ibStartTimeEditSeed.setOnClickListener {
-            editStartTime(
-                "seed",
-                tvStartTimeSeed.text.toString()
-            )
+            editStartTime("seed", tvStartTimeSeed.text.toString())
         }
-
-        showStatus(JSONObject().apply { put("error", "initializing…") })
     }
 
     override fun onDestroy() {
@@ -124,6 +116,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
     override fun onStart() {
         log.d("onStart")
         super.onStart()
+        showStatus(JSONObject().apply { put("error", "initializing…") })
         statusJob = launch(Dispatchers.Default) { loopStatus() }
     }
 

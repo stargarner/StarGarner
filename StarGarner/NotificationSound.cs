@@ -28,7 +28,7 @@ namespace StarGarner {
 
         // CWDから上に辿ってsoundフォルダを探す
         private static String? findSoundDirectory() {
-            String? sub(String? d) {
+            static String? sub(String? d) {
                 while (d != null) {
 
                     var soundDir = Path.Combine( d, "sound" );
@@ -45,7 +45,7 @@ namespace StarGarner {
                 }
                 return null;
             }
-            return sub( Directory.GetCurrentDirectory() ) ?? sub( Assembly.GetEntryAssembly().Location );
+            return sub( Directory.GetCurrentDirectory() ) ?? sub( Assembly.GetEntryAssembly()?.Location );
         }
 
         public static readonly List<String> actors = new List<String>() {
