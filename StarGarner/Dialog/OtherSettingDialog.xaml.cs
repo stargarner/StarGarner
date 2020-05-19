@@ -3,6 +3,8 @@ using System;
 using System.Collections.ObjectModel;
 using System.Data;
 using System.Diagnostics;
+using System.IO;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 
@@ -100,12 +102,20 @@ namespace StarGarner.Dialog {
             if (i == -1)
                 return;
             var room = uiRoomList[ i ];
-           
+
             var p = new Process();
             p.StartInfo.CreateNoWindow = true;
             p.StartInfo.FileName = "cmd";
             p.StartInfo.Arguments = $"/C start {room.url}";
             p.Start();
+        }
+        public void lbRecord_Folder(Object sender, RoutedEventArgs e) {
+            var i = lbRecord.SelectedIndex;
+            if (i == -1)
+                return;
+            var room = uiRoomList[ i ];
+
+            Process.Start( "EXPLORER.EXE", Path.GetFullPath( room.folder ).Replace( "/", "\\" ) );
         }
 
         public void lbRecord_Edit(Object sender, RoutedEventArgs e) {
@@ -122,6 +132,7 @@ namespace StarGarner.Dialog {
                     room.roomCaption = x;
                     lbRecord.Items.Refresh();
                     updateApplyButton();
+                    return Task.FromResult<String?>(null);
                 }
                 ).Show();
         }
@@ -133,37 +144,55 @@ namespace StarGarner.Dialog {
             updateApplyButton();
         }
 
-        private void addRecord() {
-            var text = tbRoomUrl.Text.Trim();
-
-            var mainWindow = this.mainWindow;
-            if (mainWindow == null)
-                return;
-
-            Task.Run( async () => {
-                try {
-                    var room = await mainWindow.recorderHub.findRoom( text );
-
-                    await Dispatcher.RunAsync( () => {
-                        foreach (var ui in uiRoomList) {
-                            if (ui.roomName == room.roomName) {
-                                throw new DuplicateNameException( $"{room.roomName}は既に含まれています" );
-                            } else if (ui.roomId == room.roomId) {
-                                throw new DuplicateNameException( $"room_id {room.roomId} is duplicated. used in {ui.roomName} and {room.roomName} ." );
-                            }
-                        }
-                        var idx = uiRoomList.InsertSorted( room );
-                        lbRecord.SelectedIndex = idx;
-                        tbRoomUrl.Text = "";
-                        updateApplyButton();
-                    } );
-                } catch (DuplicateNameException ex) {
-                    MessageBox.Show( ex.Message );
-                } catch (Exception ex) {
-                    MessageBox.Show( ex.ToString() );
-                }
-            } );
+        static String getRoomName(String url) {
+            var m = new Regex( $"\\A{Config.URL_TOP}([^/#?]+)" ).Match( url );
+            if (!m.Success) {
+                throw new ArgumentException( "部屋のURLの形式が変です" );
+            }
+            return m.Groups[ 1 ].Value;
         }
+
+        private void addRecord() => new OneLineTextInputDialog(
+            this,
+            $"録画する部屋のURL",
+            "",
+            (x) => {
+                try {
+                    var roomName = getRoomName( x );
+                    foreach (var r in uiRoomList) {
+                        if (r.roomName == roomName) {
+                            throw new DuplicateNameException( $"部屋 {roomName} は既に登録済みです" );
+                        }
+                    }
+                    return null;
+                } catch (Exception ex) {
+                    return ex.Message;
+                }
+            },
+            async (x) => {
+                try {
+                    var roomName = getRoomName( x );
+
+                    var mainWindow = this.mainWindow;
+                    if (mainWindow == null)
+                        throw new InvalidOperationException( "mainWindow is null." );
+
+                    var room = await Task.Run( () => mainWindow.recorderHub.findRoom( roomName ) );
+                    foreach (var r in uiRoomList) {
+                        if (r.roomId == room.roomId) {
+                            throw new DuplicateNameException( $"room_id {room.roomId} is duplicated. used in {r.roomName} and {room.roomName} ." );
+                        }
+                    }
+                    var idx = uiRoomList.InsertSorted( room );
+                    lbRecord.SelectedIndex = idx;
+                    updateApplyButton();
+                    return null;
+                } catch (Exception ex) {
+                    Log.e( ex, "addRecord failed." );
+                    return ex.Message;
+                }
+            }
+        ).Show();
 
         private void loadRecorderItems() {
             var source = mainWindow?.recorderHub?.getList();
@@ -179,12 +208,12 @@ namespace StarGarner.Dialog {
         }
 
         internal void showRecorderStatus() {
-            var source = mainWindow?.recorderHub?.getList();
-            if (source != null) {
-                foreach (var a in uiRoomList) {
-                    var r = source.Find( (x) => x.roomName == a.roomName );
-                    a.isRecordingUi = r == null ? false : r.recording?.isRunning == true;
-                }
+            var hub = mainWindow?.recorderHub;
+            if (hub == null)
+                return;
+
+            foreach (var a in uiRoomList) {
+                a.isRecordingUi = hub.findRecording( a.roomName )?.isRunning == true;
             }
             lbRecord.Items.Refresh();
         }
@@ -226,12 +255,6 @@ namespace StarGarner.Dialog {
             btnApply.Click += (sender, e) => { save(); updateApplyButton(); };
 
             btnRecordAdd.Click += (sender, e) => addRecord();
-            lbRecord.SelectionChanged += (sender, e) => {
-                var i = lbRecord.SelectedIndex;
-                if (i != -1) {
-                    tbRoomUrl.Text = uiRoomList[ i ].url;
-                }
-            };
 
             updateApplyButton();
             showServerStatus();

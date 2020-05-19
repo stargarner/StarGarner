@@ -1,5 +1,6 @@
 ﻿using StarGarner.Util;
 using System;
+using System.Threading.Tasks;
 using System.Windows;
 
 namespace StarGarner.Dialog {
@@ -17,21 +18,36 @@ namespace StarGarner.Dialog {
             btnOk.IsEnabled = error == null && initialValue != sv;
         }
 
-        public OneLineTextInputDialog(Window parent, String caption, String initialValue, Func<String, String?> validator, Action<String> onOk) {
+        public OneLineTextInputDialog(
+            Window parent, String caption, String initialValue,
+            Func<String, String?> validator, Func<String, Task<String?>> onOk) {
             this.Owner = parent;
             this.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            this.SourceInitialized += (x, y) => this.HideMinimizeAndMaximizeButtons();
+
+            this.initialValue = initialValue;
             this.validator = validator;
 
             InitializeComponent();
 
             lbCaption.Content = caption;
             tbContent.Text = initialValue;
-            this.initialValue = initialValue;
+            tbContent.Focus();
 
             tbContent.TextChanged += (sender, e) => updateOkButton();
-
             btnCancel.Click += (sender, e) => Close();
-            btnOk.Click += (sender, e) => { onOk( tbContent.Text.ToString().Trim() ); Close(); };
+
+            btnOk.Click += async (sender, e) => {
+                var text = tbContent.Text.ToString().Trim();
+                var error = await onOk( text );
+                if (error != null) {
+                    tbError.textOrGone( error ?? "" );
+                    btnOk.IsEnabled = false;
+                } else {
+                    Close();
+                }
+            };
+
             updateOkButton();
         }
     }

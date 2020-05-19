@@ -12,15 +12,12 @@ namespace StarGarner {
         public volatile List<Room> starRooms = new List<Room>();
         public volatile List<Room> seedRooms = new List<Room>();
 
-        private static readonly HttpClient client = new HttpClient();
-
         private readonly MainWindow window;
+
         internal volatile String? cookie = null;
 
-        public OnliveChecker(MainWindow window) {
-            this.window = window;
-            client.DefaultRequestHeaders.Add( "User-Agent", Config.userAgent );
-        }
+        public OnliveChecker(MainWindow window) 
+            => this.window = window;
 
         //######################################################
         // ギフト所持数のチェック
@@ -46,7 +43,7 @@ namespace StarGarner {
                     var request = new HttpRequestMessage( HttpMethod.Get, url );
                     request.Headers.Add( "Accept", "application/json" );
                     request.Headers.Add( "Cookie", cookie );
-                    var response = await client.SendAsync( request ).ConfigureAwait( false );
+                    var response = await Config.httpClient.SendAsync( request ).ConfigureAwait( false );
 
                     // レスポンスを受け取った時刻
                     now = UnixTime.now;
@@ -111,7 +108,7 @@ namespace StarGarner {
                 var url = $"{Config.URL_TOP}api/live/onlives?skip_serial_code_live=1&_={UnixTime.now / 1000L}";
                 var request = new HttpRequestMessage( HttpMethod.Get, url );
                 request.Headers.Add( "Accept", "application/json" );
-                var response = await client.SendAsync( request ).ConfigureAwait( false );
+                var response = await Config.httpClient.SendAsync( request ).ConfigureAwait( false );
                 now = UnixTime.now;
                 var content = await response.Content.ReadAsStringAsync().ConfigureAwait( false );
 

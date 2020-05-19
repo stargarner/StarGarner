@@ -7,6 +7,7 @@
     Title="その他の設定"
     Width="640"
     Height="320"
+    ResizeMode="CanResizeWithGrip"
     SizeToContent="Height"
     WindowStyle="SingleBorderWindow"
     mc:Ignorable="d">
@@ -15,7 +16,7 @@
         <Grid
             Width="Auto"
             MinHeight="32"
-            Margin="4,4,4,4"
+            Margin="4,4,24,4"
             HorizontalAlignment="Right"
             DockPanel.Dock="Bottom">
             <Grid.ColumnDefinitions>
@@ -78,14 +79,23 @@
                             x:Name="tbRecordFfmpegPath"
                             x:FieldModifier="private" />
 
-                        <Label
-                            Margin="0,4,0,0"
-                            Content="録画する部屋" />
+                        <StackPanel
+                            Margin="0,8,0,2"
+                            Orientation="Horizontal">
+                            <Label Content="録画する部屋" />
+                            <Button
+                                x:Name="btnRecordAdd"
+                                Grid.Column="2"
+                                Height="28"
+                                Margin="8,0,0,0"
+                                Padding="8,0,8,0"
+                                x:FieldModifier="private"
+                                Content="追加" />
+                        </StackPanel>
                         <ListBox
                             x:Name="lbRecord"
                             MinHeight="0"
                             MaxHeight="800"
-                            Margin="4"
                             HorizontalAlignment="Stretch"
                             VerticalAlignment="Top"
                             x:FieldModifier="private"
@@ -95,6 +105,9 @@
                                     <MenuItem
                                         Click="lbRecord_View"
                                         Header="ブラウザで開く" />
+                                    <MenuItem
+                                        Click="lbRecord_Folder"
+                                        Header="保存フォルダを開く" />
                                     <MenuItem
                                         Click="lbRecord_Edit"
                                         Header="編集" />
@@ -106,7 +119,7 @@
 
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Height="32">
+                                    <Border MinHeight="24">
                                         <TextBlock
                                             VerticalAlignment="Center"
                                             DockPanel.Dock="Left"
@@ -116,36 +129,6 @@
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
                         </ListBox>
-
-                        <Grid Margin="0,4,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-
-                            <Label
-                                Grid.Column="0"
-                                VerticalAlignment="Center"
-                                Content="部屋URL" />
-                            <TextBox
-                                x:Name="tbRoomUrl"
-                                Grid.Column="1"
-                                Height="Auto"
-                                MinHeight="24"
-                                VerticalAlignment="Center"
-                                VerticalContentAlignment="Center"
-                                AcceptsReturn="False"
-                                TextWrapping="NoWrap" />
-                            <Button
-                                x:Name="btnRecordAdd"
-                                Grid.Column="2"
-                                Height="28"
-                                Margin="4"
-                                Padding="4,0,4,0"
-                                x:FieldModifier="private"
-                                Content="追加" />
-                        </Grid>
                     </StackPanel>
                 </GroupBox>
                 <GroupBox Margin="4">

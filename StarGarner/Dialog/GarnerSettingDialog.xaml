@@ -7,13 +7,14 @@
     Title="GarnerSettingDialog"
     Width="640"
     Height="320"
+    ResizeMode="CanResizeWithGrip"
     WindowStyle="SingleBorderWindow"
     mc:Ignorable="d">
     <DockPanel LastChildFill="True">
         <Grid
             Width="Auto"
             MinHeight="32"
-            Margin="4,4,4,4"
+            Margin="4,4,24,4"
             HorizontalAlignment="Right"
             DockPanel.Dock="Bottom">
             <Grid.ColumnDefinitions>

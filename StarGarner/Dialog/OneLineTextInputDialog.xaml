@@ -7,14 +7,16 @@
     Title="OneLineTextInputDialog"
     Width="640"
     Height="200"
+    ResizeMode="CanResizeWithGrip"
     SizeToContent="Height"
+    WindowStyle="SingleBorderWindow"
     mc:Ignorable="d">
 
     <DockPanel LastChildFill="True">
         <Grid
             Width="Auto"
             MinHeight="32"
-            Margin="4,4,4,4"
+            Margin="4,4,24,4"
             HorizontalAlignment="Right"
             DockPanel.Dock="Bottom">
             <Grid.ColumnDefinitions>
@@ -49,7 +51,9 @@
             <TextBox
                 x:Name="tbContent"
                 Height="Auto"
+                MinHeight="28"
                 HorizontalAlignment="Stretch"
+                VerticalContentAlignment="Center"
                 TextWrapping="NoWrap" />
             <TextBox
                 x:Name="tbError"
