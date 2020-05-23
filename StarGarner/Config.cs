@@ -17,18 +17,12 @@ namespace StarGarner {
         // HTTPリクエストのUser-Agent
         internal static readonly String userAgent = test( @"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36" );
 
-        public static readonly HttpClient httpClient = createHttpClient();
-
-        private static HttpClient createHttpClient() {
-            var client = new HttpClient();
-            client.DefaultRequestHeaders.Add( "User-Agent", Config.userAgent );
-            return client;
-        }
-
         // 初期ページおよび部屋を閉じた時に戻るページ。ログイン状態を判断できること
         internal static readonly String URL_TOP = d( @"COTmJ4DIVJHVfuJtBatjGqIoSUwQQ1isTjszBtk9Y1w=" );
 
         internal static readonly String REGEX_SITE_DOMAIN = d( @"tPw9gD1b+q73JeHqDL4G2vfEWXVUCH6M7EQ2N7FdcdU=" );
+
+        internal const String ffmpegOptions = "-nostdin -hide_banner -loglevel info -timeout 30000 -fflags +igndts";
 
         // 星と種のギフトID
         internal static readonly HashSet<Int32> starIds = new HashSet<Int32>() { 1, 2, 1001, 1002, 1003 };
@@ -81,15 +75,15 @@ namespace StarGarner {
         internal const String KEY_RESPONSE_LOG = "ResponseLog";
         internal const String KEY_LISTEN_ENABLED = "listenEnabled";
         internal const String KEY_LISTEN_ADDR = "listenAddr";
-        internal const String KEY_LISTEN_PORT= "listenPort";
-        internal const String KEY_RECORDER_HUB= "recorderHub";
+        internal const String KEY_LISTEN_PORT = "listenPort";
+        internal const String KEY_RECORDER_HUB = "recorderHub";
 
-        internal const String KEY_SAVE_DIR= "saveDir";
-        internal const String KEY_FFMPEG_PATH= "ffmpegPath";
-        internal const String KEY_ROOM_NAME= "roomName";
-        internal const String KEY_ROOM_ID= "roomId";
-        internal const String KEY_ROOM_CAPTION= "roomCaption";
-        internal const String KEY_ROOMS= "rooms";
+        internal const String KEY_SAVE_DIR = "saveDir";
+        internal const String KEY_FFMPEG_PATH = "ffmpegPath";
+        internal const String KEY_ROOM_NAME = "roomName";
+        internal const String KEY_ROOM_ID = "roomId";
+        internal const String KEY_ROOM_CAPTION = "roomCaption";
+        internal const String KEY_ROOMS = "rooms";
 
         // garner設定保存キー
         internal const String KEY_EXPIRE_EXCEED = "expireExceed";
@@ -165,5 +159,13 @@ namespace StarGarner {
             var str = Encoding.UTF8.GetString( decoded.ToArray() );
             return new Regex( @"\x00+\z" ).Replace( str, "" );
         }
+
+        private static HttpClient createHttpClient() {
+            var client = new HttpClient();
+            client.DefaultRequestHeaders.Add( "User-Agent", Config.userAgent );
+            return client;
+        }
+
+        internal static readonly HttpClient httpClient = createHttpClient();
     }
 }

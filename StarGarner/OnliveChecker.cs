@@ -153,8 +153,6 @@ namespace StarGarner {
 
                 runGifCount();
 
-                window.recorderHub.step();
-
             } catch (Exception ex) {
                 Log.e( ex, "load failed." );
             }

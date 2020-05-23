@@ -56,11 +56,11 @@ namespace StarGarner.Model {
 
             public static Item? parse(String src) {
                 try {
-                    var m = reStartTime.Match( src );
-                    if (m.Success) {
-                        var hour = ( Int32.Parse( m.Groups[ 1 ].Value ) + 24 ) % 24;
-                        var minute = Int32.Parse( m.Groups[ 2 ].Value );
-                        var offset = Int64.Parse( m.Groups[ 3 ].Value ) * UnixTime.minute1;
+                    var groups = reStartTime.matchOrNull( src )?.Groups;
+                    if (groups != null) {
+                        var hour = ( Int32.Parse( groups[ 1 ].Value ) + 24 ) % 24;
+                        var minute = Int32.Parse( groups[ 2 ].Value );
+                        var offset = Int64.Parse( groups[ 3 ].Value ) * UnixTime.minute1;
                         if (hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59 && offset > 0L) {
                             return new Item( hour, minute, offset );
                         }

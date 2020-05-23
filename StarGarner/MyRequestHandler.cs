@@ -53,8 +53,7 @@ namespace StarGarner {
 
             // skip some image/css/playlist url.
             var urlWithoutQuery = reRemoveQueryAndFragment.Replace( url, "" );
-            var m = reFileExtension.Match( urlWithoutQuery );
-            var ext = m.Success ? m.Groups[ 1 ].Value.ToLower() : null;
+            var ext = reFileExtension.matchOrNull( urlWithoutQuery )?.Groups[ 1 ].Value.ToLower();
             if (ext != null && ignoreExtensions.Contains( ext ))
                 return false;
 

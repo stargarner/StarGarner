@@ -5,8 +5,10 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Data;
 using System.IO;
+using System.Net;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -155,5 +157,22 @@ namespace StarGarner.Util {
             collection.Add( item );
             return collection.Count - 1;
         }
+
+        public static void ForEach<T>(this IEnumerable<T> sequence, Action<T> action) {
+            foreach (var item in sequence)
+                action( item );
+        }
+
+        public static Match? matchOrNull(this Regex re, String input) {
+            var m = re.Match( input );
+            return m.Success ? m : null;
+        }
+
+        public static Int32 toInt32(this String src) => Int32.Parse( src );
+
+        public static Int64 toInt64(this String src) => Int64.Parse( src );
+
+        public static String decodeEntity(this String src)
+            => WebUtility.HtmlDecode( src );
     }
 }

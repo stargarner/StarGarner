@@ -1,12 +1,20 @@
 ﻿using StarGarner.Util;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Data;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
+using System.Linq;
+using System.Security.AccessControl;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Threading;
 
 namespace StarGarner.Dialog {
 
@@ -52,7 +60,7 @@ namespace StarGarner.Dialog {
                     changed = true;
                 }
 
-                if (!mainWindow.recorderHub.equalsRoomList( uiRoomList )) {
+                if (mainWindow.recorderHub.isRoomListChanged( uiRoomList )) {
                     changed = true;
                 }
             }
@@ -115,7 +123,7 @@ namespace StarGarner.Dialog {
                 return;
             var room = uiRoomList[ i ];
 
-            Process.Start( "EXPLORER.EXE", Path.GetFullPath( room.folder ).Replace( "/", "\\" ) );
+            Process.Start( "EXPLORER.EXE", Path.GetFullPath( room.getFolder( mainWindow!.recorderHub ) ).Replace( "/", "\\" ) );
         }
 
         public void lbRecord_Edit(Object sender, RoutedEventArgs e) {
@@ -125,14 +133,14 @@ namespace StarGarner.Dialog {
             var room = uiRoomList[ i ];
             new OneLineTextInputDialog(
                 this,
-                $"{room.roomName}の説明文",
-                room.roomCaption,
-                (x) => null,
-                (x) => {
+                caption: $"{room.roomName}の説明文",
+                initialValue: room.roomCaption,
+                validator: (x) => null,
+                onOk: (x) => {
                     room.roomCaption = x;
                     lbRecord.Items.Refresh();
                     updateApplyButton();
-                    return Task.FromResult<String?>(null);
+                    return Task.FromResult<String?>( null );
                 }
                 ).Show();
         }
@@ -144,19 +152,17 @@ namespace StarGarner.Dialog {
             updateApplyButton();
         }
 
-        static String getRoomName(String url) {
-            var m = new Regex( $"\\A{Config.URL_TOP}([^/#?]+)" ).Match( url );
-            if (!m.Success) {
-                throw new ArgumentException( "部屋のURLの形式が変です" );
-            }
-            return m.Groups[ 1 ].Value;
-        }
+        static String getRoomName(String url)
+            => new Regex( $"\\A{Config.URL_TOP}([^/#?]+)" ).matchOrNull( url )
+                ?.Groups[ 1 ].Value
+                ?? throw new ArgumentException( "部屋のURLの形式が変です" );
 
         private void addRecord() => new OneLineTextInputDialog(
             this,
-            $"録画する部屋のURL",
-            "",
-            (x) => {
+            caption: $"録画する部屋のURL",
+            initialValue: "",
+            inputRestriction: OneLineTextInputDialog.InputStyle.RoomUrl,
+            validator: (x) => {
                 try {
                     var roomName = getRoomName( x );
                     foreach (var r in uiRoomList) {
@@ -169,7 +175,7 @@ namespace StarGarner.Dialog {
                     return ex.Message;
                 }
             },
-            async (x) => {
+            onOk: async (x) => {
                 try {
                     var roomName = getRoomName( x );
 
@@ -177,7 +183,7 @@ namespace StarGarner.Dialog {
                     if (mainWindow == null)
                         throw new InvalidOperationException( "mainWindow is null." );
 
-                    var room = await Task.Run( () => mainWindow.recorderHub.findRoom( roomName ) );
+                    var room = await Task.Run( () => RecordRoom.find( roomName ) );
                     foreach (var r in uiRoomList) {
                         if (r.roomId == room.roomId) {
                             throw new DuplicateNameException( $"room_id {room.roomId} is duplicated. used in {r.roomName} and {room.roomName} ." );
@@ -201,9 +207,7 @@ namespace StarGarner.Dialog {
             source.Sort();
 
             uiRoomList.Clear();
-            foreach (var room in source) {
-                uiRoomList.Add( room.clone() );
-            }
+            source.ForEach( (it) => uiRoomList.Add( new RecordRoom( it ) ) );
             lbRecord.ItemsSource = uiRoomList;
         }
 
@@ -213,7 +217,7 @@ namespace StarGarner.Dialog {
                 return;
 
             foreach (var a in uiRoomList) {
-                a.isRecordingUi = hub.findRecording( a.roomName )?.isRunning == true;
+                a.isRecordingUi = hub.getRecording( a.roomName )?.isRunning == true;
             }
             lbRecord.Items.Refresh();
         }
@@ -249,6 +253,9 @@ namespace StarGarner.Dialog {
             tbListenAddress.TextChanged += (sender, e) => updateApplyButton();
             tbListenPort.TextChanged += (sender, e) => updateApplyButton();
 
+            tbRecordSaveDir.TextChanged += (sender, e) => checkRecordSaveDir();
+            tbRecordFfmpegPath.TextChanged += (sender, e) => checkRecordFfmpegPath();
+
             // add event handler to bottom buttons
             btnCancel.Click += (sender, e) => Close();
             btnOk.Click += (sender, e) => { save(); Close(); };
@@ -256,10 +263,115 @@ namespace StarGarner.Dialog {
 
             btnRecordAdd.Click += (sender, e) => addRecord();
 
-            updateApplyButton();
+            checkRecordSaveDir();
+            checkRecordFfmpegPath();
             showServerStatus();
+            updateApplyButton();
 
             showRecorderStatus();
         }
+
+        private static readonly HashSet<Char> invalidPathChars = new HashSet<Char>() { '*', '?', '"', '<', '>', '|' };
+
+        private void checkRecordFfmpegPath() => Dispatcher.BeginInvoke( async () => {
+
+            static String? check(String path) {
+                var invalids = path.ToCharArray().Where( (c) => invalidPathChars.Contains( c ) ).ToList();
+                if (invalids.Count > 0)
+                    return "使用できない文字 " + String.Join( " ", invalids ) + " が含まれています。";
+                if (!File.Exists( path ))
+                    return "指定された場所にファイルが存在しません";
+                return null;
+            }
+
+            static async Task readStream(StringBuilder dst, StreamReader reader) {
+                try {
+                    var tmp = new Char[ 4096 ];
+                    while (true) {
+                        var delta = await reader.ReadAsync( tmp, 0, tmp.Length ).ConfigureAwait( false );
+                        if (delta <= 0)
+                            break;
+                        dst.Append( tmp, 0, delta );
+                    }
+                } catch (Exception ex) {
+                    Log.e( ex, "readStream failed." );
+                }
+            }
+
+            try {
+                var path = tbRecordFfmpegPath.Text.Trim();
+
+                var error = await Task.Run( () => check( path ) );
+                if (error != null) {
+                    throw new Exception( error );
+                }
+
+                var p = new Process();
+                p.StartInfo.FileName = path;
+                p.StartInfo.Arguments = "-hide_banner -version";
+                p.StartInfo.RedirectStandardOutput = true;
+                p.StartInfo.RedirectStandardError = true;
+                p.StartInfo.CreateNoWindow = true;
+                p.Start();
+                var sbOut = new StringBuilder();
+                var sbErr = new StringBuilder();
+                var t1 = Task.Run( async () => await readStream( sbOut, p.StandardOutput ) );
+                var t2 = Task.Run( async () => await readStream( sbErr, p.StandardError ) );
+                p.WaitForExit();
+                await t1;
+                await t2;
+                var content = String.Join( "\n", sbOut, sbErr );
+                content = new Regex( "[\\x0d\\x0a]+" ).Replace( content, "\x0d\x0a" );
+                if (p.ExitCode == 0) {
+                    content = new Regex( "[^\\x0d\\x0a]+" ).matchOrNull( content )?.Groups[ 0 ].Value ?? content;
+                }
+                tbRecordFfmpegPathError.Foreground = p.ExitCode == 0 ? Brushes.Blue : Brushes.Red;
+                tbRecordFfmpegPathError.textOrGone( content );
+                return;
+            } catch (Exception ex) {
+                tbRecordFfmpegPathError.Foreground = Brushes.Red;
+                tbRecordFfmpegPathError.textOrGone( ex.Message );
+                return;
+            }
+        } );
+
+        private void checkRecordSaveDir() => Dispatcher.BeginInvoke( async () => {
+
+            static String? checkFolderWriteable(String path) {
+                var file = Path.Combine( path, ".checkWriteAccess" );
+                try {
+                    using var fh = File.Create( file );
+                    return null;
+                } catch (Exception ex) {
+                    return $"checkFolderWriteable: {ex.Message}";
+                } finally {
+                    try {
+                        File.Delete( file );
+                    } catch (Exception) {
+                        // ignored.
+                    }
+                }
+            }
+
+            static String? check(String path) {
+                var invalids = path.ToCharArray().Where( (c) => invalidPathChars.Contains( c ) ).ToList();
+                if (invalids.Count > 0)
+                    return "使用できない文字 " + String.Join( " ", invalids ) + " が含まれています。";
+                if (File.Exists( path ))
+                    return "指定された場所には(フォルダではなく)ファイルが既に存在します。";
+                if (!Directory.Exists( path ))
+                    return "指定された場所にフォルダが存在しません。(たぶん自動作成されます)";
+                return checkFolderWriteable( path );
+            }
+
+            try {
+                var path = tbRecordSaveDir.Text.Trim();
+                var error = await Task.Run( () => check( path ) );
+                tbRecordSaveDirError.textOrGone( error ?? "" );
+            } catch (Exception ex) {
+                Log.e( ex, "checkRecordSaveDir() failed." );
+                tbRecordSaveDirError.textOrGone( ex.Message ?? "checkRecordSaveDir() failed." );
+            }
+        } );
     }
 }

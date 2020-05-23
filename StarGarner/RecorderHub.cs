@@ -1,12 +1,13 @@
 ﻿using Newtonsoft.Json.Linq;
+using StarGarner.Model;
 using StarGarner.Util;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -15,6 +16,12 @@ namespace StarGarner {
 
     // 録画中情報
     internal class Recording : IDisposable {
+
+        static readonly Regex reSpaces = new Regex( @"\s+" );
+        static readonly Regex reSpeed = new Regex( @"\s*\bspeed=[\s\d.]+x\s*\z|\s*q=-1\.0\b" );
+        static readonly Regex reFps = new Regex( @"\s*\bfps=\s*(\d+)" );
+
+
         internal readonly String url;
         internal readonly String roomName;
         internal readonly LinkedList<String> lines = new LinkedList<String>();
@@ -23,9 +30,7 @@ namespace StarGarner {
         internal Boolean isRunning => !process.HasExited;
         internal Int64 timeExit = 0L;
 
-        static readonly Regex reSpaces = new Regex( @"\s+" );
-        static readonly Regex reSpeed = new Regex( @"\s*\bspeed=[\s\d.]+x\s*\z|\s*q=-1\.0\b" );
-        static readonly Regex reFps = new Regex( @"\s*\bfps=\s*(\d+)" );
+        Int32 countWarningNonMonotonous = 0;
 
         private async Task readStream(StreamReader sr) {
             try {
@@ -34,19 +39,28 @@ namespace StarGarner {
                     if (line == null)
                         break;
 
-                    // not log
                     if (line.Contains( " Skip " ) || line.Contains( " Opening " )) {
+                        // not log, not status
                         continue;
-                    }
+                    } else if (line.Contains( "Non-monotonous DTS in output stream" )) {
 
-                    line = reSpeed.Replace( reSpaces.Replace( line, " " ), "" );
-                    var m = reFps.Match( line );
+                        if (countWarningNonMonotonous >= 10)
+                            continue;
 
-                    var fps = m.Success ? Int32.Parse( m.Groups[ 1 ].Value ) : -1;
-                    if (fps >= 1) {
-                        // not log, but show in status window
-                    } else {
                         Log.d( line );
+
+                        if (++countWarningNonMonotonous == 10) {
+                            Log.d( "(Suppresses repeated warnings…)" );
+                        }
+
+                    } else {
+                        line = reSpeed.Replace( reSpaces.Replace( line, " " ), "" );
+                        var fps = reFps.matchOrNull( line )?.Groups[ 1 ].Value.toInt32() ?? -1;
+                        if (fps >= 1) {
+                            // not log, but show in status window
+                        } else {
+                            Log.d( line );
+                        }
                     }
 
                     lock (lines) {
@@ -77,7 +91,7 @@ namespace StarGarner {
             var p = new Process();
             p.StartInfo.CreateNoWindow = true;
             p.StartInfo.FileName = hub.ffmpegPath;
-            p.StartInfo.Arguments = $"-nostdin -hide_banner -loglevel info -timeout 30000 -user_agent \"{Config.userAgent}\" -i \"{url}\" -c copy \"{ file}\"";
+            p.StartInfo.Arguments = $"{Config.ffmpegOptions} -user_agent \"{Config.userAgent}\" -i \"{url}\" -c copy \"{ file}\"";
             p.StartInfo.UseShellExecute = false; // require to read output
             p.StartInfo.RedirectStandardOutput = true;
             p.StartInfo.RedirectStandardError = true;
@@ -112,32 +126,10 @@ namespace StarGarner {
         }
     }
 
-    // ストリーミング情報
-    internal class StreamingInfo : IComparable<StreamingInfo> {
-        public String url;
-        public String type;
-        public Int64 quality;
-        public Boolean is_default;
-
-        public StreamingInfo(
-            String url,
-            String type,
-            Boolean is_default,
-            Int64 quality
-            ) {
-            this.url = url;
-            this.type = type;
-            this.is_default = is_default;
-            this.quality = quality;
-        }
-
-        public Int32 CompareTo(StreamingInfo other)
-            => other.is_default.CompareTo( is_default ).notZero() ?? other.quality.CompareTo( quality );
-    }
-
     // 録画対象の部屋
     internal class RecordRoom : IComparable<RecordRoom> {
-        private readonly RecorderHub hub;
+        static readonly Regex rePathDelimiter = new Regex( @"[/\\]+" );
+
         internal readonly String roomName;
         internal Int64 roomId;
         internal String roomCaption;
@@ -153,20 +145,43 @@ namespace StarGarner {
 
         internal String url => $"{Config.URL_TOP}{roomName}";
 
-        internal String folder {
-            get {
-                var dir = $"{hub.saveDir}/{roomName}";
+        internal String getFolder(RecorderHub hub) {
+            var dir = rePathDelimiter.Replace( $"{hub.saveDir}/{roomName}", "/" );
+
+            try {
                 Directory.CreateDirectory( dir );
-                return dir;
+            } catch (Exception ex) {
+                Log.e( ex, "CreateDirectory() failed." );
             }
+
+            return dir;
         }
 
-        internal RecordRoom(RecorderHub hub, String roomName, Int64 roomId, String roomCaption) {
-            this.hub = hub;
+        internal RecordRoom(String roomName, Int64 roomId, String roomCaption) {
             this.roomName = roomName;
             this.roomId = roomId;
             this.roomCaption = roomCaption;
         }
+
+        internal RecordRoom(RecordRoom src) {
+            this.roomName = src.roomName;
+            this.roomId = src.roomId;
+            this.roomCaption = src.roomCaption;
+        }
+
+        public Int32 CompareTo(RecordRoom other)
+            => roomName.CompareTo( other.roomName ).notZero()
+            ?? roomId.CompareTo( other.roomId );
+
+        public override Boolean Equals(Object? obj) {
+            if (obj is RecordRoom other)
+                return roomName.Equals( other.roomName );
+
+            return false;
+        }
+
+        public override Int32 GetHashCode()
+            => HashCode.Combine( roomName );
 
         public String Text {
             get {
@@ -175,8 +190,17 @@ namespace StarGarner {
             }
         }
 
-        async Task check() {
+        async Task check(RecorderHub hub) {
             try {
+                if (!File.Exists( hub.ffmpegPath )) {
+                    Log.e( $"ffmpegPath '${hub.ffmpegPath}' is not valid." );
+                }
+
+                var folder = getFolder( hub );
+                if (!Directory.Exists( folder )) {
+                    Log.e( $"folder '${folder}' is not valid." );
+                }
+
                 // オンライブ部屋一覧にあるストリーミング情報はあまり信用できないので読み直す
                 var url = $"{Config.URL_TOP}api/live/streaming_url?room_id={roomId}&ignore_low_stream=1&_={UnixTime.now / 1000L}";
                 var request = new HttpRequestMessage( HttpMethod.Get, url );
@@ -187,8 +211,11 @@ namespace StarGarner {
 
                 var root = JToken.Parse( content );
                 var streaming_url_list = root.Value<JArray>( "streaming_url_list" );
+
                 if (streaming_url_list == null) {
-                    Log.d( $"{roomName}: not on live." );
+                    return;
+                } else if (streaming_url_list.Count == 0) {
+                    Log.d( $"{roomName}: there is streaming_url_list, but it's empty." );
                     return;
                 }
 
@@ -201,37 +228,52 @@ namespace StarGarner {
                                 src.Value<Boolean>( "is_default" ),
                                 src.Value<Int64>( "quality" )
                                 );
-                        if (si.type != "hls")
+                        if (si.type != "hls") {
+                            Log.d( $"{roomName}: not hls. type={si.type}" );
                             continue;
+                        }
                         list.Add( si );
                     } catch (Exception ex) {
                         Log.e( ex, $"{roomName}: StreamingInfo parse failed." );
                     }
                 }
+
                 if (list.Count == 0) {
-                    Log.d( $"{roomName}: streaming_url_list is empty." );
+                    Log.d( $"{roomName}: StreamingInfo list is empty. original size={streaming_url_list.Count}" );
                     return;
                 }
                 list.Sort();
 
                 var streamUrl = list[ 0 ].url;
 
-                var recording = hub.findRecording( roomName );
+                var recording = hub.getRecording( roomName );
                 if (recording?.isRunning == true && recording?.url == streamUrl) {
                     Log.d( $"{roomName}: already recording {streamUrl}" );
                     return;
                 }
 
+                // streamUrl が決定しても動画が開始しているとは限らない
                 request = new HttpRequestMessage( HttpMethod.Get, streamUrl );
                 response = await Config.httpClient.SendAsync( request ).ConfigureAwait( false );
-                if (!response.IsSuccessStatusCode) {
-                    Log.d( $"{roomName}: {streamUrl} {response}" );
-                    return;
-                } else {
-                    Log.d( $"{roomName}: {streamUrl} {response}" );
-                    content = await response.Content.ReadAsStringAsync().ConfigureAwait( false );
-                    Log.d( content );
+                Int32 code;
+                try {
+                    code = (Int32)response.StatusCode;
+                } catch (Exception ex) {
+                    Log.e( ex, "can't get numeric http status code" );
+                    code = -1;
                 }
+                Log.d( $"{roomName}: {code} {response.ReasonPhrase} {streamUrl}" );
+                if (!response.IsSuccessStatusCode)
+                    return;
+                content = await response.Content.ReadAsStringAsync().ConfigureAwait( false );
+                var reLineFeed = new Regex( "[\x0d\x0a]+" );
+                foreach (var a in reLineFeed.Split( content )) {
+                    var line = a.Trim();
+                    if (line.Length == 0 || line.StartsWith( "#" ))
+                        continue;
+                    Log.d( line );
+                }
+                // 動画の開始を確認できた…ことにする。tsファイルがまだ404の場合があるが…
 
                 recording?.Dispose();
 
@@ -239,22 +281,19 @@ namespace StarGarner {
                     Log.d( $"{roomName}: hub was disposed." );
                     return;
                 }
-
                 Log.d( $"{roomName}: recording start!" );
-
-                hub.startRecording( roomName, streamUrl, folder );
+                hub.setRecodring( roomName, streamUrl, folder );
             } catch (Exception ex) {
                 Log.e( ex, $"{roomName}: check failed." );
             }
         }
 
-        internal RecordRoom clone() => new RecordRoom( hub, roomName, roomId, roomCaption );
 
-        internal void step() {
+        internal void step(RecorderHub hub) {
             if (lastCheckTask != null && !lastCheckTask.IsCompleted)
                 return;
 
-            var recording = hub.findRecording( roomName );
+            var recording = hub.getRecording( roomName );
             if (recording?.isRunning == true)
                 return;
 
@@ -270,7 +309,7 @@ namespace StarGarner {
                 // 分数が0,5,10, ... に近いなら間隔を短くする
                 var dtNow = now.toDateTime();
                 var x = Math.Abs( ( dtNow.Minute * 60 + dtNow.Second ) % 300 - 30 ) / 30;
-                var interval = ( x / 30 ) switch
+                var interval = x switch
                 {
                     0 => UnixTime.second1 * 10,
                     1 => UnixTime.second1 * 20,
@@ -282,22 +321,30 @@ namespace StarGarner {
             }
 
             lastCheckTime = now;
-            lastCheckTask = Task.Run( async () => await check() );
+            lastCheckTask = Task.Run( async () => await check( hub ) );
         }
 
-        public Int32 CompareTo(RecordRoom other)
-            => roomName.CompareTo( other.roomName ).notZero() ??
-            roomId.CompareTo( other.roomId );
 
-        public override Boolean Equals(Object? obj) {
-            if (obj is RecordRoom other)
-                return roomName.Equals( other.roomName );
+        internal static async Task<RecordRoom> find(String roomName) {
 
-            return false;
+            var url = $"{Config.URL_TOP}{roomName}";
+
+            var request = new HttpRequestMessage( HttpMethod.Get, url );
+            request.Headers.Add( "Accept", "text/html" );
+            var response = await Config.httpClient.SendAsync( request ).ConfigureAwait( false );
+            var content = await response.Content.ReadAsStringAsync().ConfigureAwait( false );
+
+            var roomId = new Regex( "content=\"showroom:///room\\?room_id=(\\d+)" ).matchOrNull( content )
+                ?.Groups[ 1 ].Value.toInt64()
+                ?? throw new DataException( "can't find room_id." );
+
+            var roomCaption =
+                new Regex( "<meta property=\"og:title\" content=\"([^\"]+)\">" ).matchOrNull( content )
+                ?.Groups[ 1 ].Value.decodeEntity()
+                ?? "?";
+
+            return new RecordRoom( roomName, roomId, roomCaption );
         }
-
-        public override Int32 GetHashCode()
-            => HashCode.Combine( roomName );
     }
 
     internal class RecorderHub : IDisposable {
@@ -309,18 +356,22 @@ namespace StarGarner {
         internal readonly List<RecordRoom> roomList = new List<RecordRoom>();
         public volatile Boolean isDisposed = false;
 
-        internal RecorderHub(MainWindow mainWindow)
-            => this.mainWindow = mainWindow;
+        private readonly ConcurrentDictionary<String, Recording> recordingMap
+            = new ConcurrentDictionary<String, Recording>();
+
+        internal Recording? getRecording(String roomName)
+            => recordingMap.GetValueOrDefault( roomName );
+
+        internal void setRecodring(String roomName, String streamUrl, String folder)
+            => recordingMap[ roomName ] = new Recording( this, roomName, streamUrl, folder );
 
         public void Dispose() {
             isDisposed = true;
-            lock (recordingMap) {
-                foreach (var r in recordingMap.Values) {
-                    r.Dispose();
-                }
-            }
+            recordingMap.Values.ForEach( (it) => it.Dispose() );
         }
 
+        internal RecorderHub(MainWindow mainWindow)
+            => this.mainWindow = mainWindow;
 
         internal JObject encodeSetting() {
             lock (roomList) {
@@ -360,10 +411,9 @@ namespace StarGarner {
                             continue;
 
                         roomList.Add( new RecordRoom(
-                            this
-                            , r.Value<String>( Config.KEY_ROOM_NAME )
-                            , id.Value
-                            , r.Value<String>( Config.KEY_ROOM_CAPTION )
+                            r.Value<String>( Config.KEY_ROOM_NAME ),
+                             id.Value,
+                             r.Value<String>( Config.KEY_ROOM_CAPTION )
                             ) );
                     }
                 }
@@ -389,86 +439,63 @@ namespace StarGarner {
                     }
                 }
                 foreach (var a in oldList) {
-                    findRecording( a.roomName )?.Dispose();
+                    getRecording( a.roomName )?.Dispose();
                 }
             }
         }
 
+        // タイマーから定期的に呼ばれる
         internal void step() {
             lock (roomList) {
                 foreach (var room in roomList) {
-                    Task.Run( () => room.step() );
+                    Task.Run( () => room.step( this ) );
                 }
             }
         }
 
+        // 録画状態の変化をUIに通知する
         internal void showStatus() {
             if (isDisposed)
                 return;
             mainWindow.showRecorderStatus();
         }
 
-        internal Boolean isRecording {
-            get {
-                lock (recordingMap) {
-                    foreach (var r in recordingMap.Values) {
-                        if (r.isRunning)
-                            return true;
-                    }
-                    return false;
-                }
-            }
-        }
-
+        // 録画対象リストを返す
         internal List<RecordRoom> getList() {
             lock (roomList) {
-                var dst = new List<RecordRoom>();
-                dst.AddRange( roomList );
-                return dst;
+                return new List<RecordRoom>( roomList );
             }
         }
 
-        internal Boolean equalsRoomList(IEnumerable<RecordRoom> uiRoomList) {
+        // 設定UIと現在の設定が異なるなら真
+        internal Boolean isRoomListChanged(IEnumerable<RecordRoom> uiRoomList) {
             lock (roomList) {
                 var uiSet = new SortedSet<RecordRoom>( uiRoomList );
                 var currentSet = new SortedSet<RecordRoom>( roomList );
+
                 if (uiSet.Count != currentSet.Count)
-                    return false;
+                    return true;
+
                 var ia = uiSet.GetEnumerator();
                 var ib = currentSet.GetEnumerator();
                 while (ia.MoveNext()) {
                     ib.MoveNext();
                     var a = ia.Current;
                     var b = ib.Current;
+
                     if (a.roomName != b.roomName || a.roomId != b.roomId || a.roomCaption != b.roomCaption)
-                        return false;
+                        return true;
                 }
-                return true;
+
+                return false;
             }
         }
 
-        internal async Task<RecordRoom> findRoom(String roomName) {
-            var url = $"{Config.URL_TOP}{roomName}";
-            var request = new HttpRequestMessage( HttpMethod.Get, url );
-            request.Headers.Add( "Accept", "text/html" );
-            var response = await Config.httpClient.SendAsync( request ).ConfigureAwait( false );
-            var content = await response.Content.ReadAsStringAsync().ConfigureAwait( false );
-            var m = new Regex( "content=\"showroom:///room\\?room_id=(\\d+)" ).Match( content );
-            if (!m.Success) {
-                throw new DataException( "can't find room_id." );
-            }
-            var roomId = Int64.Parse( m.Groups[ 1 ].Value );
-
-            String roomCaption;
-            m = new Regex( "<meta property=\"og:title\" content=\"([^\"]+)\">" ).Match( content );
-            roomCaption = !m.Success ? "?" : WebUtility.HtmlDecode( m.Groups[ 1 ].Value );
-            return new RecordRoom( this, roomName, roomId, roomCaption );
-        }
-
+        // 録画ステータスの表示
         internal void dumpStatus(StatusCollection dst) {
             lock (roomList) {
                 foreach (var room in roomList) {
-                    var recording = findRecording( room.roomName );
+                    var recording = getRecording( room.roomName );
                     if (recording?.isRunning == true) {
                         dst.add( $"録画中 {room.roomName} {room.roomCaption}" );
                         var line = recording.getLine();
@@ -476,20 +503,6 @@ namespace StarGarner {
                             dst.add( line );
                     }
                 }
-            }
-        }
-
-        private readonly Dictionary<String, Recording> recordingMap = new Dictionary<String, Recording>();
-
-        internal Recording? findRecording(String roomName) {
-            lock (recordingMap) {
-                return recordingMap.GetValueOrDefault( roomName );
-            }
-        }
-        internal void startRecording(String roomName, String streamUrl, String folder) {
-            var recording = new Recording( this, roomName, streamUrl, folder );
-            lock (recordingMap) {
-                recordingMap[ roomName ] = recording;
             }
         }
     }

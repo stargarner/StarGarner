@@ -24,6 +24,7 @@
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
+
             <Button
                 x:Name="btnOk"
                 Grid.Column="0"
@@ -65,12 +66,23 @@
                     <StackPanel Orientation="Vertical">
 
                         <Label
-                            Margin="0,4,0,0"
+                            Height="Auto"
+                            Margin="0,0,0,0"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Stretch"
                             Content="保存フォルダ" />
                         <TextBox
                             x:Name="tbRecordSaveDir"
                             x:FieldModifier="private" />
-
+                        <TextBox
+                            x:Name="tbRecordSaveDirError"
+                            Height="Auto"
+                            Margin="0,4,0,0"
+                            HorizontalAlignment="Stretch"
+                            BorderThickness="0"
+                            Foreground="Red"
+                            IsReadOnly="True"
+                            TextWrapping="Wrap" />
 
                         <Label
                             Margin="0,4,0,0"
@@ -78,6 +90,15 @@
                         <TextBox
                             x:Name="tbRecordFfmpegPath"
                             x:FieldModifier="private" />
+                        <TextBox
+                            x:Name="tbRecordFfmpegPathError"
+                            Height="Auto"
+                            Margin="0,4,0,0"
+                            HorizontalAlignment="Stretch"
+                            BorderThickness="0"
+                            Foreground="Red"
+                            IsReadOnly="True"
+                            TextWrapping="Wrap" />
 
                         <StackPanel
                             Margin="0,8,0,2"
@@ -135,6 +156,8 @@
                     <GroupBox.Header>
                         <CheckBox
                             x:Name="cbListen"
+                            MinHeight="24"
+                            VerticalContentAlignment="Center"
                             x:FieldModifier="private"
                             Content="内蔵HTTPサーバ(スマホ連携用)" />
                     </GroupBox.Header>
@@ -175,7 +198,7 @@
                         <CheckBox
                             x:Name="cbResponseLog"
                             Width="Auto"
-                            MinHeight="32"
+                            MinHeight="24"
                             HorizontalAlignment="Left"
                             VerticalAlignment="Top"
                             VerticalContentAlignment="Center"

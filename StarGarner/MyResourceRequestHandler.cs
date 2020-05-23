@@ -75,16 +75,15 @@ namespace StarGarner {
                     window.onLogin( false );
                 }
 
-                var m = reLiveData.Match( content );
-                if (m.Success) {
-                    var src = WebUtility.HtmlDecode( m.Groups[ 1 ].Value );
+                var src = reLiveData.matchOrNull( content )?.Groups[ 1 ].Value.decodeEntity();
+                if (src != null) {
                     try {
                         var list = new List<JObject>();
                         foreach (JObject gift in JToken.Parse( src ).Value<JArray>( "gift_list" )) {
                             list.Add( gift );
                         }
                         if (list.Count == 0) {
-                            window.onNotLive( );
+                            window.onNotLive();
                         } else {
                             window.onGiftCount( now, list, url );
                         }
@@ -103,9 +102,9 @@ namespace StarGarner {
                         return;
                     }
 
-                    var m = reExceedError.Match( content );
-                    if (m.Success) {
-                        window.onExceedError( now, m.Groups[ 1 ].Value, m.Groups[ 2 ].Value );
+                    var groups = reExceedError.matchOrNull( content )?.Groups;
+                    if (groups != null) {
+                        window.onExceedError( now, groups[ 1 ].Value, groups[ 2 ].Value );
                         return;
                     }
                     // 既に取得済みの部屋だと  {"is_login":true,"online_user_num":12,"live_watch_incentive":{}} などが返る
@@ -140,7 +139,7 @@ namespace StarGarner {
                     using var writer = new StreamWriter( $"{dir}/{ now.formatFileTime()}-{reFileNameUnsafe.Replace( url, "-" )}", false, Encoding.UTF8 );
                     writer.Write( data );
                 } catch (Exception ex) {
-                    Log.e( ex, "saveString failed." );
+                    Log.e( ex, "responceLog() failed." );
                 }
             } );
         }
