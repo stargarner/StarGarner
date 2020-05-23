@@ -616,7 +616,8 @@ namespace StarGarner {
             /// Specifying a CachePath is required for persistence of cookies, saving of passwords, etc
             /// an In-Memory cache is used by default( similar to Incogneto).
             using var settings = new CefSettings() {
-                LogFile = $"{Directory.GetCurrentDirectory()}/Debug.log",
+                CachePath = Path.GetFullPath( "cache" ),
+                LogFile = Path.Combine( Directory.GetCurrentDirectory(),"Debug.log"),
                 LogSeverity = LogSeverity.Disable,
 
                 UserAgent = Config.userAgent,
@@ -624,7 +625,6 @@ namespace StarGarner {
                 Locale = "ja",
                 AcceptLanguageList = "ja-JP",
 
-                CachePath = "cache",
                 PersistSessionCookies = true,
             };
 
