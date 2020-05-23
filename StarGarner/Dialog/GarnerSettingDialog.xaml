@@ -52,10 +52,24 @@
         </Grid>
         <ScrollViewer>
             <StackPanel Orientation="Vertical">
-                <Label
-                    Width="Auto"
-                    HorizontalAlignment="Left"
-                    Content="通知音の声優" />
+                <StackPanel Orientation="Horizontal">
+                    <Label
+                        Width="Auto"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Content="通知音の声優" />
+                    <Button
+                        x:Name="btnTestSoundActor"
+                        Width="Auto"
+                        MinWidth="32"
+                        MinHeight="32"
+                        Margin="4,4,4,4"
+                        Padding="8,0,8,0"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        x:FieldModifier="private"
+                        Content="テスト" />
+                </StackPanel>
                 <ListBox
                     x:Name="lbSoundActor"
                     Width="Auto"
@@ -83,18 +97,6 @@
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
-                <StackPanel>
-                    <Button
-                        x:Name="btnTestSoundActor"
-                        Width="Auto"
-                        MinWidth="32"
-                        MinHeight="32"
-                        Margin="4,4,4,4"
-                        Padding="8,0,8,0"
-                        HorizontalAlignment="Left"
-                        x:FieldModifier="private"
-                        Content="テスト" />
-                </StackPanel>
             </StackPanel>
         </ScrollViewer>
     </DockPanel>

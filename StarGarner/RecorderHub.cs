@@ -35,7 +35,7 @@ namespace StarGarner {
         private async Task readStream(StreamReader sr) {
             try {
                 while (true) {
-                    var line = await sr.ReadLineAsync();
+                    var line = await sr.ReadLineAsync().ConfigureAwait( false );
                     if (line == null)
                         break;
 
@@ -99,6 +99,8 @@ namespace StarGarner {
             p.Exited += (sender, args) => {
                 timeExit = UnixTime.now;
                 Log.d( $"{roomName}: recording process was exited." );
+                hub.mainWindow?.play( NotificationSound.recordingEnd );
+              
                 hub.showStatus();
             };
             p.Start();
@@ -106,6 +108,7 @@ namespace StarGarner {
             Task.Run( async () => await readStream( p.StandardError ) );
             this.process = p;
             hub.showStatus();
+            hub.mainWindow?.play( NotificationSound.recordingStart );
         }
 
         public void Dispose() {
@@ -275,7 +278,7 @@ namespace StarGarner {
                 }
                 // 動画の開始を確認できた…ことにする。tsファイルがまだ404の場合があるが…
 
-                recording?.Dispose();
+               
 
                 if (hub.isDisposed) {
                     Log.d( $"{roomName}: hub was disposed." );
@@ -360,10 +363,12 @@ namespace StarGarner {
             = new ConcurrentDictionary<String, Recording>();
 
         internal Recording? getRecording(String roomName)
-            => recordingMap.GetValueOrDefault( roomName );
+            => recordingMap.getOrNull( roomName );
 
-        internal void setRecodring(String roomName, String streamUrl, String folder)
-            => recordingMap[ roomName ] = new Recording( this, roomName, streamUrl, folder );
+        internal void setRecodring(String roomName, String streamUrl, String folder) {
+            recordingMap.removeOrNull( roomName )?.Dispose();
+            recordingMap[ roomName ] = new Recording( this, roomName, streamUrl, folder );
+        }
 
         public void Dispose() {
             isDisposed = true;
@@ -420,6 +425,30 @@ namespace StarGarner {
             }
         }
 
+
+
+        // タイマーから定期的に呼ばれる
+        internal void step() {
+            lock (roomList) {
+                foreach (var room in roomList) {
+                    Task.Run( () => room.step( this ) );
+                }
+            }
+        }
+
+        // 録画状態の変化をUIに通知する
+        internal void showStatus() {
+            if (isDisposed)
+                return;
+            mainWindow.showRecorderStatus();
+        }
+
+        // 録画対象リストを返す
+        internal List<RecordRoom> getRoomList() {
+            lock (roomList) {
+                return new List<RecordRoom>( roomList );
+            }
+        }
         internal void setRoomList(IEnumerable<RecordRoom>? src) {
             if (src == null)
                 return;
@@ -439,34 +468,10 @@ namespace StarGarner {
                     }
                 }
                 foreach (var a in oldList) {
-                    getRecording( a.roomName )?.Dispose();
+                    recordingMap.removeOrNull( a.roomName )?.Dispose();
                 }
             }
         }
-
-        // タイマーから定期的に呼ばれる
-        internal void step() {
-            lock (roomList) {
-                foreach (var room in roomList) {
-                    Task.Run( () => room.step( this ) );
-                }
-            }
-        }
-
-        // 録画状態の変化をUIに通知する
-        internal void showStatus() {
-            if (isDisposed)
-                return;
-            mainWindow.showRecorderStatus();
-        }
-
-        // 録画対象リストを返す
-        internal List<RecordRoom> getList() {
-            lock (roomList) {
-                return new List<RecordRoom>( roomList );
-            }
-        }
-
         // 設定UIと現在の設定が異なるなら真
         internal Boolean isRoomListChanged(IEnumerable<RecordRoom> uiRoomList) {
             lock (roomList) {

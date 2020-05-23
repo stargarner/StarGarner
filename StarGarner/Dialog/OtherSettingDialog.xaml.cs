@@ -1,4 +1,5 @@
-﻿using StarGarner.Util;
+﻿using StarGarner.Model;
+using StarGarner.Util;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -63,6 +64,10 @@ namespace StarGarner.Dialog {
                 if (mainWindow.recorderHub.isRoomListChanged( uiRoomList )) {
                     changed = true;
                 }
+
+                var st = (SoundActor?)lbSoundActor.SelectedItem;
+                if (st != null && st.Name != mainWindow.soundActor)
+                    changed = true;
             }
 
             return changed;
@@ -75,6 +80,10 @@ namespace StarGarner.Dialog {
             var mainWindow = this.mainWindow;
             if (mainWindow == null)
                 return;
+
+            var st = (SoundActor?)lbSoundActor.SelectedItem;
+            if (st != null)
+                mainWindow.soundActor = st.Name;
 
             var responseLog = cbResponseLog.IsChecked ?? false;
             MyResourceRequestHandler.responseLogEnabled = responseLog;
@@ -201,7 +210,7 @@ namespace StarGarner.Dialog {
         ).Show();
 
         private void loadRecorderItems() {
-            var source = mainWindow?.recorderHub?.getList();
+            var source = mainWindow?.recorderHub?.getRoomList();
             if (source == null)
                 return;
             source.Sort();
@@ -223,53 +232,6 @@ namespace StarGarner.Dialog {
         }
 
         //############################################################################
-
-        protected override void OnClosed(EventArgs e) {
-            isClosed = true;
-            base.OnClosed( e );
-        }
-
-        public OtherSettingDialog(MainWindow main) {
-            this.Owner = main;
-            this.WindowStartupLocation = WindowStartupLocation.CenterOwner;
-            this.SourceInitialized += (x, y) => this.HideMinimizeAndMaximizeButtons();
-
-            InitializeComponent();
-
-            // load ui value
-            cbResponseLog.IsChecked = MyResourceRequestHandler.responseLogEnabled;
-            cbListen.IsChecked = main.httpServer.enabled;
-            tbListenAddress.Text = main.httpServer.listenAddr;
-            tbListenPort.Text = main.httpServer.listenPort;
-            tbRecordSaveDir.Text = main.recorderHub.saveDir;
-            tbRecordFfmpegPath.Text = main.recorderHub.ffmpegPath;
-            loadRecorderItems();
-
-            // add event handler
-            cbResponseLog.Checked += (sender, e) => updateApplyButton();
-            cbResponseLog.Unchecked += (sender, e) => updateApplyButton();
-            cbListen.Checked += (sender, e) => updateApplyButton();
-            cbListen.Unchecked += (sender, e) => updateApplyButton();
-            tbListenAddress.TextChanged += (sender, e) => updateApplyButton();
-            tbListenPort.TextChanged += (sender, e) => updateApplyButton();
-
-            tbRecordSaveDir.TextChanged += (sender, e) => checkRecordSaveDir();
-            tbRecordFfmpegPath.TextChanged += (sender, e) => checkRecordFfmpegPath();
-
-            // add event handler to bottom buttons
-            btnCancel.Click += (sender, e) => Close();
-            btnOk.Click += (sender, e) => { save(); Close(); };
-            btnApply.Click += (sender, e) => { save(); updateApplyButton(); };
-
-            btnRecordAdd.Click += (sender, e) => addRecord();
-
-            checkRecordSaveDir();
-            checkRecordFfmpegPath();
-            showServerStatus();
-            updateApplyButton();
-
-            showRecorderStatus();
-        }
 
         private static readonly HashSet<Char> invalidPathChars = new HashSet<Char>() { '*', '?', '"', '<', '>', '|' };
 
@@ -343,7 +305,7 @@ namespace StarGarner.Dialog {
                     using var fh = File.Create( file );
                     return null;
                 } catch (Exception ex) {
-                    return $"checkFolderWriteable: {ex.Message}";
+                    return $"フォルダへの書き込み権限がないようです。 {ex.Message}";
                 } finally {
                     try {
                         File.Delete( file );
@@ -373,5 +335,61 @@ namespace StarGarner.Dialog {
                 tbRecordSaveDirError.textOrGone( ex.Message ?? "checkRecordSaveDir() failed." );
             }
         } );
+
+        void testSound()
+          => ( (SoundActor?)lbSoundActor.SelectedItem )?.test( mainWindow?.notificationSound, NotificationSound.allOther);
+
+        //############################################################################
+
+        protected override void OnClosed(EventArgs e) {
+            isClosed = true;
+            base.OnClosed( e );
+        }
+
+        public OtherSettingDialog(MainWindow main) {
+            this.Owner = main;
+            this.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            this.SourceInitialized += (x, y) => this.HideMinimizeAndMaximizeButtons();
+
+            InitializeComponent();
+
+            // load ui value
+            cbResponseLog.IsChecked = MyResourceRequestHandler.responseLogEnabled;
+            cbListen.IsChecked = main.httpServer.enabled;
+            tbListenAddress.Text = main.httpServer.listenAddr;
+            tbListenPort.Text = main.httpServer.listenPort;
+            tbRecordSaveDir.Text = main.recorderHub.saveDir;
+            tbRecordFfmpegPath.Text = main.recorderHub.ffmpegPath;
+            loadRecorderItems();
+
+            // add event handler
+            cbResponseLog.Checked += (sender, e) => updateApplyButton();
+            cbResponseLog.Unchecked += (sender, e) => updateApplyButton();
+            cbListen.Checked += (sender, e) => updateApplyButton();
+            cbListen.Unchecked += (sender, e) => updateApplyButton();
+            tbListenAddress.TextChanged += (sender, e) => updateApplyButton();
+            tbListenPort.TextChanged += (sender, e) => updateApplyButton();
+
+            tbRecordSaveDir.TextChanged += (sender, e) => checkRecordSaveDir();
+            tbRecordFfmpegPath.TextChanged += (sender, e) => checkRecordFfmpegPath();
+
+            // add event handler to bottom buttons
+            btnCancel.Click += (sender, e) => Close();
+            btnOk.Click += (sender, e) => { save(); Close(); };
+            btnApply.Click += (sender, e) => { save(); updateApplyButton(); };
+
+            btnRecordAdd.Click += (sender, e) => addRecord();
+
+            SoundActor.initListBox( lbSoundActor, mainWindow?.soundActor );
+            lbSoundActor.SelectionChanged += (sender, e) => updateApplyButton();
+            btnTestSoundActor.Click += (sender, e) => testSound();
+
+            checkRecordSaveDir();
+            checkRecordFfmpegPath();
+            showServerStatus();
+            updateApplyButton();
+
+            showRecorderStatus();
+        }
     }
 }

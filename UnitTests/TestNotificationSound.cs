@@ -35,5 +35,18 @@ namespace StarGarner {
             }
             Log.d( "test end" );
         }
+
+        [TestMethod]
+        public void TestSoundfileExists() {
+            foreach(var soundName in NotificationSound.all) {
+                foreach (var actor in NotificationSound.actors) {
+                    if (actor == "none")
+                        continue;
+                    var file = NotificationSound.getSoundFile( actor, soundName );
+                    Assert.IsNotNull( file );
+                    Log.e( $"file={file}" );
+                }
+            }
+        }
     }
 }

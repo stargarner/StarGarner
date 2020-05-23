@@ -121,6 +121,9 @@ namespace StarGarner {
             return false;
         }
 
+        internal void play(String soundName) 
+            => notificationSound.play( soundActor, soundName );
+
         // タイマーやブラウザイベントから呼ばれる
         // 状況を確認して部屋を開いたり閉じたりする
         public void step(String caller) => Dispatcher.BeginInvoke( () => {
@@ -475,6 +478,8 @@ namespace StarGarner {
         //######################################################
         // save/load UI state
 
+        internal String soundActor = "yukari";
+
         private void saveUI()
             => new JObject() {
                 { Config.KEY_START_TIME_STAR ,tbStartTimeStar.Text},
@@ -483,7 +488,8 @@ namespace StarGarner {
                 { Config.KEY_LISTEN_ENABLED, httpServer.enabled },
                 { Config.KEY_LISTEN_ADDR, httpServer.listenAddr },
                 { Config.KEY_LISTEN_PORT, httpServer.listenPort },
-                { Config.KEY_RECORDER_HUB, recorderHub.encodeSetting() }
+                { Config.KEY_RECORDER_HUB, recorderHub.encodeSetting() },
+                { Config.KEY_SOUND_ACTOR, soundActor }
             }.saveTo( Config.FILE_UI_JSON );
 
         private void loadUI() {
@@ -506,6 +512,10 @@ namespace StarGarner {
                     sv = root.Value<String?>( Config.KEY_LISTEN_PORT );
                     if (sv != null)
                         httpServer.listenPort = sv;
+
+                    sv = root.Value<String?>( Config.KEY_SOUND_ACTOR);
+                    if (sv != null)
+                        this.soundActor = sv;
 
                     var bv = root.Value<Boolean?>( Config.KEY_LISTEN_ENABLED );
                     httpServer.enabled = bv ?? false;

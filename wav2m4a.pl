@@ -9,7 +9,10 @@ chdir 'sound-wav' or die "chdir failed. $!";
 for(<*.wav>){
 	my $aac = "../sound/$_";
 	$aac =~ s/\.wav$/.m4a/;
-	unlink $aac;
+	
+	# unlink $aac;
+	next if -f $aac;
+	
 	my $cmd = qq('$aacEncoder' -br 128000 -he -ignorelength -if '$_' -of '$aac');
 	print "$cmd\n";
 	system $cmd;

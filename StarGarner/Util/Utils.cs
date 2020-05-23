@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Data;
@@ -69,6 +70,16 @@ namespace StarGarner.Util {
         public static T GetOrNull<T>(this WeakReference<T> wr) where T : class {
             wr.TryGetTarget( out var d );
             return d;
+        }
+
+        public static V getOrNull<K, V>(this ConcurrentDictionary<K, V> map, K key) {
+            map.TryGetValue( key, out var v );
+            return v;
+        }
+
+        public static V removeOrNull<K, V>(this ConcurrentDictionary<K, V> map, K key) {
+            map.TryRemove( key, out var v );
+            return v;
         }
 
         public static void textOrGone(this TextBlock tb, String str) {

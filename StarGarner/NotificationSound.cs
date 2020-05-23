@@ -1,26 +1,79 @@
 ﻿using NAudio.Wave;
 using StarGarner.Util;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 
 namespace StarGarner {
+
+    public class PlayingInfo : IDisposable {
+        AudioFileReader? reader;
+        WaveOutEvent? output;
+
+        public PlayingInfo(String fullPath) {
+            try {
+                this.reader = new AudioFileReader( fullPath );
+                this.output = new WaveOutEvent();
+                output.PlaybackStopped += (sender, e) => Dispose();
+                output.Init( reader );
+                output.Play();
+            } catch (Exception ex) {
+                Dispose();
+                throw ex;
+            }
+        }
+
+        public void Dispose() {
+            lock (this) {
+                try {
+                    output?.Stop();
+                    output?.Dispose();
+                    output = null;
+                } catch (Exception) { }
+
+                try {
+                    reader?.Dispose();
+                    reader = null;
+                } catch (Exception) { }
+            }
+        }
+
+        internal Boolean isPlaying() {
+            lock (this) {
+                try {
+                    return output?.PlaybackState == PlaybackState.Playing;
+                } catch (Exception ex) {
+                    Dispose();
+                    throw ex;
+                }
+            }
+        }
+    }
+
     public class NotificationSound : IDisposable {
 
-        public const String liveStart = "liveStart.m4a";
-        public const String exceedReset = "exceedReset.m4a";
-        public const String thirdLap = "thirdLap.m4a";
         public const String exceedError = "exceedError.m4a";
+        public const String exceedReset = "exceedReset.m4a";
+        public const String liveStart = "liveStart.m4a";
+        public const String thirdLap = "thirdLap.m4a";
+        public const String recordingStart = "recordingStart.m4a";
+        public const String recordingEnd = "recordingEnd.m4a";
 
         public static readonly List<String> counts = Enumerable.Range( 0, 11 ).Select( x => $"count-{x}.m4a" ).ToList();
 
         public static readonly List<String> all = allSoundName();
 
-        private static List<String> allSoundName() {
-            var dst = new List<String>() { liveStart, exceedReset, thirdLap, exceedError };
+        public static readonly List<String> allOther = new List<String>() { recordingStart, recordingEnd };
+
+        public static readonly List<String> allGarner = allSoundName( exclude: allOther );
+
+        private static List<String> allSoundName(List<String>? exclude = null) {
+            var dst = new List<String>() { exceedError, exceedReset, liveStart, thirdLap, recordingStart, recordingEnd };
             dst.AddRange( counts );
+            exclude?.ForEach( (it) => dst.Remove( it ) );
             return dst;
         }
 
@@ -54,84 +107,37 @@ namespace StarGarner {
 
         private static readonly HashSet<String> actorsMap = actors.ToHashSet();
 
-        private static String? getSoundFile(String actorName, String file)
+        internal static String? getSoundFile(String actorName, String file)
             => soundDir == null ? null :
                 actorName == "none" || !actorsMap.Contains( actorName ) ? null :
                 $"{soundDir}/{actorName}-{file}";
 
-        public class PlayingInfo : IDisposable {
-            AudioFileReader? reader;
-            WaveOutEvent? output;
+        private Boolean isDisposed = false;
 
-            public PlayingInfo(String fullPath) {
-                try {
-                    this.reader = new AudioFileReader( fullPath );
-                    this.output = new WaveOutEvent();
-                    output.PlaybackStopped += (sender, e) => Dispose();
-                    output.Init( reader );
-                    output.Play();
-                } catch (Exception ex) {
-                    Dispose();
-                    throw ex;
-                }
-            }
-
-            public void Dispose() {
-                lock (this) {
-                    try {
-                        output?.Stop();
-                        output?.Dispose();
-                        output = null;
-                    } catch (Exception) { }
-
-                    try {
-                        reader?.Dispose();
-                        reader = null;
-                    } catch (Exception) { }
-                }
-            }
-
-            internal Boolean isPlaying() {
-                lock (this) {
-                    try {
-                        return output?.PlaybackState == PlaybackState.Playing;
-                    } catch (Exception ex) {
-                        Dispose();
-                        throw ex;
-                    }
-                }
-            }
-        }
-
-        private readonly Dictionary<String, PlayingInfo> playerMap = new Dictionary<String, PlayingInfo>();
+        private readonly ConcurrentDictionary<String, PlayingInfo> playerMap = new ConcurrentDictionary<String, PlayingInfo>();
 
         private void stop(String fullPath) {
             try {
-                lock (playerMap) {
-                    playerMap.TryGetValue( fullPath, out var p );
-                    if (p != null) {
-                        playerMap.Remove( fullPath );
-                        p.Dispose();
-                    }
-                }
+                playerMap.removeOrNull( fullPath )?.Dispose();
             } catch (Exception ex) {
                 Log.e( ex, "NotificationSound.stop failed." );
             }
         }
 
         public void play(String actorName, String file) {
+            if (isDisposed)
+                return;
+
             var fullPath = getSoundFile( actorName, file );
             if (fullPath == null)
                 return;
 
             stop( fullPath );
 
-            lock (playerMap) {
-                try {
-                    playerMap[ fullPath ] = new PlayingInfo( fullPath );
-                } catch (Exception ex) {
-                    Log.e( ex, "NotificationSound.play failed." );
-                }
+            try {
+                playerMap[ fullPath ] = new PlayingInfo( fullPath );
+            } catch (Exception ex) {
+                Log.e( ex, "NotificationSound.play failed." );
             }
         }
 
@@ -140,20 +146,13 @@ namespace StarGarner {
             if (fullPath == null)
                 return false;
 
-            lock (playerMap) {
-                playerMap.TryGetValue( fullPath, out var p );
-                return p?.isPlaying() ?? false;
-            }
+            return playerMap.getOrNull( fullPath )?.isPlaying() ?? false;
         }
 
         public void Dispose() {
             Log.d( "NotificationSound.Dispose" );
-            lock (playerMap) {
-                foreach (var entry in playerMap) {
-                    entry.Value.Dispose();
-                }
-                playerMap.Clear();
-            }
+            isDisposed = true;
+            playerMap.Values.ForEach( (it) => it.Dispose() );
         }
     }
 }

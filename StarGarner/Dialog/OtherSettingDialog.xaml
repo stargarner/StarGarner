@@ -191,6 +191,52 @@
                     </StackPanel>
                 </GroupBox>
 
+                <StackPanel Orientation="Horizontal">
+                    <Label
+                        Width="Auto"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Content="(録画などの)通知音の声優" />
+                    <Button
+                        x:Name="btnTestSoundActor"
+                        Width="Auto"
+                        MinWidth="32"
+                        MinHeight="32"
+                        Margin="4,4,4,4"
+                        Padding="8,0,8,0"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        x:FieldModifier="private"
+                        Content="テスト" />
+                </StackPanel>
+                <ListBox
+                    x:Name="lbSoundActor"
+                    Width="Auto"
+                    Height="Auto"
+                    Margin="4"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Top"
+                    x:FieldModifier="private"
+                    SelectionMode="Single">
+                    <ListBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <VirtualizingStackPanel
+                                IsItemsHost="True"
+                                Orientation="Horizontal" />
+                        </ItemsPanelTemplate>
+                    </ListBox.ItemsPanel>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Label
+                                Height="32"
+                                HorizontalAlignment="Center"
+                                HorizontalContentAlignment="Center"
+                                VerticalContentAlignment="Center"
+                                Content="{Binding Name}" />
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
                 <GroupBox
                     Margin="4"
                     Header="開発者向け機能">
