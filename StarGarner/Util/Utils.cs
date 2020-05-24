@@ -187,7 +187,11 @@ namespace StarGarner.Util {
         public static String decodeEntity(this String src)
             => WebUtility.HtmlDecode( src );
 
+        // |や&で連結するより , で区切る方が演算子の優先順位の問題が少ない
         public static Boolean or(params Boolean[] values) 
             => values.Where( (it) => it ).Any();
+
+        public static Boolean and(params Boolean[] values)
+            => ! values.Where( (it) => !it ).Any();
     }
 }

@@ -361,7 +361,7 @@ namespace StarGarner.Dialog {
 
             btnRecordAdd.Click += (sender, e) => addRecord();
 
-            SoundActor.initListBox( lbSoundActor, mainWindow?.soundActor );
+            SoundActor.initListBox( lbSoundActor, mainWindow.soundActor );
             lbSoundActor.SelectionChanged += (sender, e) => updateApplyButton();
             btnTestSoundActor.Click += (sender, e) => testSound();
 
