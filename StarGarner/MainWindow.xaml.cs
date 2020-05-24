@@ -25,22 +25,22 @@ namespace StarGarner {
         private readonly Garner starGarner = new Garner( false );
         private readonly Garner seedGarner = new Garner( true );
 
-        // タイマー
         private readonly DispatcherTimer timer;
-
-        internal readonly NotificationSound notificationSound = new NotificationSound();
 
         private readonly ScreenKeeper screenKeeper = new ScreenKeeper();
 
-        // オンライブ部屋チェッカー
+        internal readonly NotificationSound notificationSound = new NotificationSound();
+
         internal readonly OnliveChecker onLiveChecker;
 
         internal readonly MyHttpServer httpServer;
 
         internal readonly RecorderHub recorderHub;
 
-        // ウィンドウを閉じたか
+        // ウィンドウを閉じたら真
         private Boolean isClosed = false;
+
+        internal volatile String soundActor = "yukari";
 
         // ログイン状態。bool? をvolatileにすることはできないのでInt32で持つ
         // false=0, true=1, unknown = -1
@@ -68,7 +68,6 @@ namespace StarGarner {
             get => Interlocked.Read( ref _lastHttpRequest );
             set => Interlocked.Exchange( ref _lastHttpRequest, value );
         }
-
 
         //###################################################
 
@@ -120,9 +119,6 @@ namespace StarGarner {
             }
             return false;
         }
-
-        internal void play(String soundName) 
-            => notificationSound.play( soundActor, soundName );
 
         // タイマーやブラウザイベントから呼ばれる
         // 状況を確認して部屋を開いたり閉じたりする
@@ -298,7 +294,7 @@ namespace StarGarner {
                     var giftId = gift.Value<Int32?>( "gift_id" ) ?? -1;
                     var freeNum = gift.Value<Int32?>( "free_num" ) ?? -1;
                     // htmlから読んだ時だけある var giftName = gift.Value<String>( "gift_name" );
-                    if (giftId <0 || freeNum<0)
+                    if (giftId < 0 || freeNum < 0)
                         continue;
 
                     if (Config.starIds.Contains( giftId )) {
@@ -377,15 +373,15 @@ namespace StarGarner {
         } );
 
         //######################################################
-        // アプリ内HTTPサーバからのイベント
+        // in-app HTTP server event
 
-        private HttpResponse newResponse(String msg, HttpResponseCode code = HttpResponseCode.Ok)
+        private static HttpResponse newResponse(String msg, HttpResponseCode code = HttpResponseCode.Ok)
             => new HttpResponse( code, msg, closeConnection: true );
 
         internal Task onHttpStatus(IHttpContext httpContext)
             => Dispatcher.RunAsync( () => {
                 if (isClosed) {
-                    httpContext.Response = newResponse( "window closed.", HttpResponseCode.InternalServerError );
+                    httpContext.Response = newResponse( "window closed.", HttpResponseCode.ServiceUnavailable );
                     return;
                 }
                 var dst = new JObject {
@@ -405,7 +401,7 @@ namespace StarGarner {
         internal Task onHttpStartTime(IHttpContext httpContext)
             => Dispatcher.RunAsync( () => {
                 if (isClosed) {
-                    httpContext.Response = newResponse( "window closed.", HttpResponseCode.InternalServerError );
+                    httpContext.Response = newResponse( "window closed.", HttpResponseCode.ServiceUnavailable );
                     return;
                 }
 
@@ -420,21 +416,21 @@ namespace StarGarner {
                 var kind = root.Value<String?>( "kind" );
                 var value = root.Value<String?>( "value" );
                 if (value == null) {
-                    httpContext.Response = newResponse( "mising parameter 'value'", HttpResponseCode.BadRequest );
+                    httpContext.Response = newResponse( "missing parameter 'value'", HttpResponseCode.UnprocessableEntity );
                     return;
                 }
 
-                void updateStartText(Garner garner, TextBox tb) => tb.Text = value;
+                void updateStartText(TextBox tb) => tb.Text = value;
 
                 switch (kind ?? "") {
                 case "star":
-                    updateStartText( starGarner, tbStartTimeStar );
+                    updateStartText( tbStartTimeStar );
                     break;
                 case "seed":
-                    updateStartText( seedGarner, tbStartTimeSeed );
+                    updateStartText( tbStartTimeSeed );
                     break;
                 default:
-                    httpContext.Response = newResponse( "incorrect parameter 'kind'", HttpResponseCode.BadRequest );
+                    httpContext.Response = newResponse( "incorrect parameter 'kind'", HttpResponseCode.UnprocessableEntity );
                     return;
                 }
 
@@ -444,7 +440,7 @@ namespace StarGarner {
         internal Task onHttpForceOpen(IHttpContext httpContext)
             => Dispatcher.RunAsync( () => {
                 if (isClosed) {
-                    httpContext.Response = newResponse( "window closed.", HttpResponseCode.InternalServerError );
+                    httpContext.Response = newResponse( "window closed.", HttpResponseCode.ServiceUnavailable );
                     return;
                 }
 
@@ -468,7 +464,7 @@ namespace StarGarner {
                     forceOpen( seedGarner, tbStartTimeSeed );
                     break;
                 default:
-                    httpContext.Response = newResponse( "incorrect parameter 'kind'", HttpResponseCode.BadRequest );
+                    httpContext.Response = newResponse( "incorrect parameter 'kind'", HttpResponseCode.UnprocessableEntity );
                     return;
                 }
 
@@ -477,8 +473,6 @@ namespace StarGarner {
 
         //######################################################
         // save/load UI state
-
-        internal String soundActor = "yukari";
 
         private void saveUI()
             => new JObject() {
@@ -494,41 +488,45 @@ namespace StarGarner {
 
         private void loadUI() {
             try {
-                if (File.Exists( Config.FILE_UI_JSON )) {
-                    var root = Utils.loadJson( Config.FILE_UI_JSON );
+                if (!File.Exists( Config.FILE_UI_JSON ))
+                    return;
 
-                    var sv = root.Value<String?>( Config.KEY_START_TIME_STAR );
+                var root = Utils.loadJson( Config.FILE_UI_JSON );
+
+                void loadTextBox(String key, TextBox tb) {
+                    var sv = root.Value<String?>( key );
                     if (sv != null)
-                        tbStartTimeStar.Text = sv;
-
-                    sv = root.Value<String?>( Config.KEY_START_TIME_SEED );
-                    if (sv != null)
-                        tbStartTimeSeed.Text = sv;
-
-                    sv = root.Value<String?>( Config.KEY_LISTEN_ADDR );
-                    if (sv != null)
-                        httpServer.listenAddr = sv;
-
-                    sv = root.Value<String?>( Config.KEY_LISTEN_PORT );
-                    if (sv != null)
-                        httpServer.listenPort = sv;
-
-                    sv = root.Value<String?>( Config.KEY_SOUND_ACTOR);
-                    if (sv != null)
-                        this.soundActor = sv;
-
-                    var bv = root.Value<Boolean?>( Config.KEY_LISTEN_ENABLED );
-                    httpServer.enabled = bv ?? false;
-
-                    httpServer.updateListening();
-
-                    bv = root.Value<Boolean?>( Config.KEY_RESPONSE_LOG );
-                    MyResourceRequestHandler.responseLogEnabled = bv ?? false;
-
-                    var ov = root.Value<JObject>( Config.KEY_RECORDER_HUB );
-                    if (ov != null)
-                        recorderHub.load( ov );
+                        tb.Text = sv;
                 }
+
+                void loadString(String key, ref String holder) {
+                    var sv = root.Value<String?>( key );
+                    if (sv != null)
+                        Volatile.Write( ref holder, sv );
+                }
+
+                void loadBoolean(String key, ref Boolean holder) {
+                    var bv = root.Value<Boolean?>( key );
+                    if (bv.HasValue)
+                        Volatile.Write( ref holder, bv.Value );
+                }
+
+                loadTextBox( Config.KEY_START_TIME_STAR, tbStartTimeStar );
+                loadTextBox( Config.KEY_START_TIME_SEED, tbStartTimeSeed );
+
+#pragma warning disable CS0420
+                loadBoolean( Config.KEY_LISTEN_ENABLED, ref httpServer.enabled );
+                loadString( Config.KEY_LISTEN_ADDR, ref httpServer.listenAddr );
+                loadString( Config.KEY_LISTEN_PORT, ref httpServer.listenPort );
+
+                loadString( Config.KEY_SOUND_ACTOR, ref soundActor );
+                loadBoolean( Config.KEY_RESPONSE_LOG, ref MyResourceRequestHandler.responseLogEnabled );
+#pragma warning restore CS0420
+
+                var ov = root.Value<JObject>( Config.KEY_RECORDER_HUB );
+                if (ov != null)
+                    recorderHub.load( ov );
+
             } catch (Exception ex) {
                 Log.e( ex, "loadUI failed." );
             }
@@ -543,18 +541,30 @@ namespace StarGarner {
         internal WeakReference<OtherSettingDialog>? refSettingDialogOther;
 
         private void openGarnerSetting(Garner garner, ref WeakReference<GarnerSettingDialog>? refSettingDialog) {
-            var d = refSettingDialog?.GetOrNull();
+            var d = refSettingDialog?.getOrNull();
             if (d != null && d.isClosed == false) {
                 d.Activate();
                 return;
             }
 
             // Instantiate the dialog box
-            var dlg = new GarnerSettingDialog( this,garner );
+            var dlg = new GarnerSettingDialog( this, garner );
             dlg.Show();
             refSettingDialog = new WeakReference<GarnerSettingDialog>( dlg );
         }
 
+        private void openOtherSetting() {
+            var d = refSettingDialogOther?.getOrNull();
+            if (d != null && d.isClosed == false) {
+                d.Activate();
+                return;
+            }
+
+            // Instantiate the dialog box
+            var dlg = new OtherSettingDialog( this );
+            dlg.Show();
+            refSettingDialogOther = new WeakReference<OtherSettingDialog>( dlg );
+        }
 
         internal void saveGarnerSetting(Garner garner) => Dispatcher.BeginInvoke( () => {
             try {
@@ -567,33 +577,25 @@ namespace StarGarner {
             }
         } );
 
-        private void openOtherSetting() {
-            var d = refSettingDialogOther?.GetOrNull();
-            if (d != null && d.isClosed == false) {
-                d.Activate();
-                return;
-            }
-
-            // Instantiate the dialog box
-            var dlg = new OtherSettingDialog( this );
-            dlg.Show();
-            refSettingDialogOther = new WeakReference<OtherSettingDialog>( dlg );
-        }
-
         internal void saveOtherSetting() => Dispatcher.BeginInvoke( () => {
             try {
                 if (isClosed)
                     return;
+
                 saveUI();
             } catch (Exception ex) {
-                Log.e( ex, "saveGarnerSetting failed." );
+                Log.e( ex, "saveOtherSetting failed." );
             }
         } );
 
+        //######################################################
 
         internal void showRecorderStatus() => Dispatcher.BeginInvoke(
-            () => refSettingDialogOther?.GetOrNull()?.showRecorderStatus() 
+            () => refSettingDialogOther?.getOrNull()?.showRecorderStatus()
         );
+
+        internal void play(String soundName)
+            => notificationSound.play( soundActor, soundName );
 
         //######################################################
         // window lifecycle event
@@ -613,11 +615,12 @@ namespace StarGarner {
             this.httpServer = new MyHttpServer( this );
             this.recorderHub = new RecorderHub( this );
 
-            /// Specifying a CachePath is required for persistence of cookies, saving of passwords, etc
-            /// an In-Memory cache is used by default( similar to Incogneto).
+            // Specifying a CachePath is required for 
+            // persistence of cookies, saving of passwords, etc
+            // an In-Memory cache is used by default( similar to Incogneto).
             using var settings = new CefSettings() {
-                CachePath = Path.GetFullPath( "cache" ),
-                LogFile = Path.Combine( Directory.GetCurrentDirectory(),"Debug.log"),
+                CachePath = Path.Combine( Directory.GetCurrentDirectory(), "cache" ),
+                LogFile = Path.Combine( Directory.GetCurrentDirectory(), "Debug.log" ),
                 LogSeverity = LogSeverity.Disable,
 
                 UserAgent = Config.userAgent,
@@ -636,14 +639,12 @@ namespace StarGarner {
             starGarner.liveStarts.set( tbStartTimeStar.Text );
             seedGarner.liveStarts.set( tbStartTimeSeed.Text );
 
-            showRecorderStatus();
-
-
             var isInInitialize = true;
 
             btnStarSetting.Click += (sender, e) => openGarnerSetting( starGarner, ref refSettingDialogStar );
             btnSeedSetting.Click += (sender, e) => openGarnerSetting( seedGarner, ref refSettingDialogSeed );
             btnOtherSetting.Click += (sender, e) => openOtherSetting();
+
             tbStartTimeStar.TextChanged += (sender, e) => {
                 if (isInInitialize)
                     return;
@@ -666,7 +667,6 @@ namespace StarGarner {
             };
 
             cefBrowser.RequestHandler = new MyRequestHandler( this );
-            cefBrowser.Address = Config.URL_TOP;
 
             timer = new DispatcherTimer( DispatcherPriority.Normal, Dispatcher ) {
                 Interval = TimeSpan.FromMilliseconds( Config.timerInterval ),
@@ -678,9 +678,11 @@ namespace StarGarner {
                 recorderHub.step();
             };
 
-            timer.Start();
-
             isInInitialize = false;
+
+            cefBrowser.Address = Config.URL_TOP;
+            httpServer.updateListening();
+            timer.Start();
         }
 
     }

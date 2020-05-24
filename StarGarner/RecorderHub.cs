@@ -99,8 +99,8 @@ namespace StarGarner {
             p.Exited += (sender, args) => {
                 timeExit = UnixTime.now;
                 Log.d( $"{roomName}: recording process was exited." );
-                hub.mainWindow?.play( NotificationSound.recordingEnd );
-              
+                hub.mainWindow.play( NotificationSound.recordingEnd );
+
                 hub.showStatus();
             };
             p.Start();
@@ -108,7 +108,7 @@ namespace StarGarner {
             Task.Run( async () => await readStream( p.StandardError ) );
             this.process = p;
             hub.showStatus();
-            hub.mainWindow?.play( NotificationSound.recordingStart );
+            hub.mainWindow.play( NotificationSound.recordingStart );
         }
 
         public void Dispose() {
@@ -278,7 +278,7 @@ namespace StarGarner {
                 }
                 // 動画の開始を確認できた…ことにする。tsファイルがまだ404の場合があるが…
 
-               
+
 
                 if (hub.isDisposed) {
                     Log.d( $"{roomName}: hub was disposed." );

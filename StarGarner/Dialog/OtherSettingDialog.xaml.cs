@@ -5,15 +5,12 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Data;
 using System.Diagnostics;
-using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Security.AccessControl;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 
@@ -23,102 +20,29 @@ namespace StarGarner.Dialog {
 
         public Boolean isClosed = false;
 
-        private MainWindow? mainWindow => (MainWindow?)Owner;
+        private readonly MainWindow mainWindow;
 
-        private Boolean isChanged() {
-            var changed = false;
+        private SoundActor? selectedSoundActor => (SoundActor?)lbSoundActor.SelectedItem;
 
-            var responseLog = cbResponseLog.IsChecked ?? false;
-            if (MyResourceRequestHandler.responseLogEnabled != responseLog) {
-                changed = true;
-            }
-
-            var mainWindow = this.mainWindow;
-            if (mainWindow != null) {
-
-                var listenEnabled = cbListen.IsChecked ?? false;
-                if (mainWindow.httpServer.enabled != listenEnabled) {
-                    changed = true;
-                }
-
-                var listenAddr = tbListenAddress.Text.Trim();
-                if (mainWindow.httpServer.listenAddr != listenAddr) {
-                    changed = true;
-                }
-
-                var listenPort = tbListenPort.Text.Trim();
-                if (mainWindow.httpServer.listenPort != listenPort) {
-                    changed = true;
-                }
-
-                var saveDir = tbRecordSaveDir.Text.Trim();
-                if (mainWindow.recorderHub.saveDir != saveDir) {
-                    changed = true;
-                }
-
-                var ffmpegPath = tbRecordFfmpegPath.Text.Trim();
-                if (mainWindow.recorderHub.ffmpegPath != ffmpegPath) {
-                    changed = true;
-                }
-
-                if (mainWindow.recorderHub.isRoomListChanged( uiRoomList )) {
-                    changed = true;
-                }
-
-                var st = (SoundActor?)lbSoundActor.SelectedItem;
-                if (st != null && st.Name != mainWindow.soundActor)
-                    changed = true;
-            }
-
-            return changed;
-        }
-
-        void save() {
-            if (!isChanged())
-                return;
-
-            var mainWindow = this.mainWindow;
-            if (mainWindow == null)
-                return;
-
-            var st = (SoundActor?)lbSoundActor.SelectedItem;
-            if (st != null)
-                mainWindow.soundActor = st.Name;
-
-            var responseLog = cbResponseLog.IsChecked ?? false;
-            MyResourceRequestHandler.responseLogEnabled = responseLog;
-
-            mainWindow.httpServer.enabled = cbListen.IsChecked ?? false;
-            mainWindow.httpServer.listenAddr = tbListenAddress.Text.Trim();
-            mainWindow.httpServer.listenPort = tbListenPort.Text.Trim();
-            mainWindow.httpServer.updateListening();
-
-            mainWindow.recorderHub.saveDir = tbRecordSaveDir.Text.Trim();
-            mainWindow.recorderHub.ffmpegPath = tbRecordFfmpegPath.Text.Trim();
-            mainWindow.recorderHub.setRoomList( uiRoomList );
-
-            mainWindow.saveOtherSetting();
-        }
+        void testSound()
+          => selectedSoundActor?.test( mainWindow?.notificationSound, NotificationSound.allOther );
 
         internal void showServerStatus() => Dispatcher.BeginInvoke( (Action)( () => {
             if (isClosed)
                 return;
-            var sv = mainWindow?.httpServer.serverStatus ?? "";
-            tbListenError.textOrGone( sv );
+            tbListenError.textOrGone( mainWindow?.httpServer.serverStatus ?? "" );
         } ) );
-
-
-        private void updateApplyButton() => btnApply.IsEnabled = isChanged();
 
         //############################################################################
 
-        readonly ObservableCollection<RecordRoom> uiRoomList = new ObservableCollection<RecordRoom>();
+        private readonly ObservableCollection<RecordRoom> uiRoomList = new ObservableCollection<RecordRoom>();
 
-        public void lbRecord_View(Object sender, RoutedEventArgs e) {
-            var i = lbRecord.SelectedIndex;
-            if (i == -1)
+        private RecordRoom? selectedRecordRoom => (RecordRoom?)lbRecord.SelectedItem;
+
+        private void lbRecord_View(Object sender, RoutedEventArgs e) {
+            var room = selectedRecordRoom;
+            if (room == null)
                 return;
-            var room = uiRoomList[ i ];
 
             var p = new Process();
             p.StartInfo.CreateNoWindow = true;
@@ -126,20 +50,20 @@ namespace StarGarner.Dialog {
             p.StartInfo.Arguments = $"/C start {room.url}";
             p.Start();
         }
-        public void lbRecord_Folder(Object sender, RoutedEventArgs e) {
-            var i = lbRecord.SelectedIndex;
-            if (i == -1)
+
+        private void lbRecord_Folder(Object sender, RoutedEventArgs e) {
+            var room = selectedRecordRoom;
+            if (room == null)
                 return;
-            var room = uiRoomList[ i ];
 
             Process.Start( "EXPLORER.EXE", Path.GetFullPath( room.getFolder( mainWindow!.recorderHub ) ).Replace( "/", "\\" ) );
         }
 
-        public void lbRecord_Edit(Object sender, RoutedEventArgs e) {
-            var i = lbRecord.SelectedIndex;
-            if (i == -1)
+        private void lbRecord_Edit(Object sender, RoutedEventArgs e) {
+            var room = selectedRecordRoom;
+            if (room == null)
                 return;
-            var room = uiRoomList[ i ];
+
             new OneLineTextInputDialog(
                 this,
                 caption: $"{room.roomName}の説明文",
@@ -153,7 +77,8 @@ namespace StarGarner.Dialog {
                 }
                 ).Show();
         }
-        public void lbRecord_Delete(Object sender, RoutedEventArgs e) {
+
+        private void lbRecord_Delete(Object sender, RoutedEventArgs e) {
             var i = lbRecord.SelectedIndex;
             if (i == -1)
                 return;
@@ -209,10 +134,11 @@ namespace StarGarner.Dialog {
             }
         ).Show();
 
-        private void loadRecorderItems() {
-            var source = mainWindow?.recorderHub?.getRoomList();
+        private void loadRecordRoom() {
+            var source = mainWindow.recorderHub.getRoomList();
             if (source == null)
                 return;
+
             source.Sort();
 
             uiRoomList.Clear();
@@ -221,13 +147,15 @@ namespace StarGarner.Dialog {
         }
 
         internal void showRecorderStatus() {
-            var hub = mainWindow?.recorderHub;
-            if (hub == null)
+            if (isClosed)
                 return;
+
+            var hub = mainWindow.recorderHub;
 
             foreach (var a in uiRoomList) {
                 a.isRecordingUi = hub.getRecording( a.roomName )?.isRunning == true;
             }
+
             lbRecord.Items.Refresh();
         }
 
@@ -235,35 +163,37 @@ namespace StarGarner.Dialog {
 
         private static readonly HashSet<Char> invalidPathChars = new HashSet<Char>() { '*', '?', '"', '<', '>', '|' };
 
-        private void checkRecordFfmpegPath() => Dispatcher.BeginInvoke( async () => {
+        internal static String? checkFileExists(String path) {
+            var invalids = path.ToCharArray().Where( (c) => invalidPathChars.Contains( c ) ).ToList();
+            if (invalids.Count > 0)
+                return "使用できない文字 " + String.Join( " ", invalids ) + " が含まれています。";
+            if (!File.Exists( path ))
+                return "指定された場所にファイルが存在しません";
+            return null;
+        }
 
-            static String? check(String path) {
-                var invalids = path.ToCharArray().Where( (c) => invalidPathChars.Contains( c ) ).ToList();
-                if (invalids.Count > 0)
-                    return "使用できない文字 " + String.Join( " ", invalids ) + " が含まれています。";
-                if (!File.Exists( path ))
-                    return "指定された場所にファイルが存在しません";
-                return null;
-            }
-
-            static async Task readStream(StringBuilder dst, StreamReader reader) {
-                try {
-                    var tmp = new Char[ 4096 ];
-                    while (true) {
-                        var delta = await reader.ReadAsync( tmp, 0, tmp.Length ).ConfigureAwait( false );
-                        if (delta <= 0)
-                            break;
-                        dst.Append( tmp, 0, delta );
-                    }
-                } catch (Exception ex) {
-                    Log.e( ex, "readStream failed." );
-                }
-            }
-
+        internal static async Task readStream(StringBuilder dst, StreamReader reader) {
             try {
+                var tmp = new Char[ 4096 ];
+                while (true) {
+                    var delta = await reader.ReadAsync( tmp, 0, tmp.Length ).ConfigureAwait( false );
+                    if (delta <= 0)
+                        break;
+                    dst.Append( tmp, 0, delta );
+                }
+            } catch (Exception ex) {
+                Log.e( ex, "readStream failed." );
+            }
+        }
+
+        private void checkRecordFfmpegPath() => Dispatcher.BeginInvoke( async () => {
+            try {
+                if (isClosed)
+                    return;
+
                 var path = tbRecordFfmpegPath.Text.Trim();
 
-                var error = await Task.Run( () => check( path ) );
+                var error = await Task.Run( () => checkFileExists( path ) );
                 if (error != null) {
                     throw new Exception( error );
                 }
@@ -274,61 +204,70 @@ namespace StarGarner.Dialog {
                 p.StartInfo.RedirectStandardOutput = true;
                 p.StartInfo.RedirectStandardError = true;
                 p.StartInfo.CreateNoWindow = true;
+
+                var taskCompletionSource = new TaskCompletionSource<Boolean>();
+                p.Exited += (sender, e) => taskCompletionSource.SetResult( false );
+
                 p.Start();
+
                 var sbOut = new StringBuilder();
                 var sbErr = new StringBuilder();
                 var t1 = Task.Run( async () => await readStream( sbOut, p.StandardOutput ) );
                 var t2 = Task.Run( async () => await readStream( sbErr, p.StandardError ) );
-                p.WaitForExit();
+
+                await taskCompletionSource.Task;
                 await t1;
                 await t2;
+
                 var content = String.Join( "\n", sbOut, sbErr );
                 content = new Regex( "[\\x0d\\x0a]+" ).Replace( content, "\x0d\x0a" );
                 if (p.ExitCode == 0) {
                     content = new Regex( "[^\\x0d\\x0a]+" ).matchOrNull( content )?.Groups[ 0 ].Value ?? content;
                 }
+
                 tbRecordFfmpegPathError.Foreground = p.ExitCode == 0 ? Brushes.Blue : Brushes.Red;
                 tbRecordFfmpegPathError.textOrGone( content );
-                return;
             } catch (Exception ex) {
+                Log.e( ex, "checkRecordFfmpegPath() failed." );
                 tbRecordFfmpegPathError.Foreground = Brushes.Red;
                 tbRecordFfmpegPathError.textOrGone( ex.Message );
-                return;
             }
         } );
 
-        private void checkRecordSaveDir() => Dispatcher.BeginInvoke( async () => {
-
-            static String? checkFolderWriteable(String path) {
-                var file = Path.Combine( path, ".checkWriteAccess" );
+        internal static String? checkFolderWriteable(String path) {
+            var file = Path.Combine( path, ".checkWriteAccess" );
+            try {
+                using var fh = File.Create( file );
+                return null;
+            } catch (Exception ex) {
+                return $"フォルダへの書き込み権限がないようです。 {ex.Message}";
+            } finally {
                 try {
-                    using var fh = File.Create( file );
-                    return null;
-                } catch (Exception ex) {
-                    return $"フォルダへの書き込み権限がないようです。 {ex.Message}";
-                } finally {
-                    try {
-                        File.Delete( file );
-                    } catch (Exception) {
-                        // ignored.
-                    }
+                    File.Delete( file );
+                } catch (Exception) {
+                    // ignored.
                 }
             }
+        }
 
-            static String? check(String path) {
-                var invalids = path.ToCharArray().Where( (c) => invalidPathChars.Contains( c ) ).ToList();
-                if (invalids.Count > 0)
-                    return "使用できない文字 " + String.Join( " ", invalids ) + " が含まれています。";
-                if (File.Exists( path ))
-                    return "指定された場所には(フォルダではなく)ファイルが既に存在します。";
-                if (!Directory.Exists( path ))
-                    return "指定された場所にフォルダが存在しません。(たぶん自動作成されます)";
-                return checkFolderWriteable( path );
-            }
+        internal static String? checkDirectory(String path) {
+            var invalids = path.ToCharArray().Where( (c) => invalidPathChars.Contains( c ) ).ToList();
+            if (invalids.Count > 0)
+                return "使用できない文字 " + String.Join( " ", invalids ) + " が含まれています。";
+            if (File.Exists( path ))
+                return "指定された場所には(フォルダではなく)ファイルが既に存在します。";
+            if (!Directory.Exists( path ))
+                return "指定された場所にフォルダが存在しません。(たぶん自動作成されます)";
+            return checkFolderWriteable( path );
+        }
 
+        private void checkRecordSaveDir() => Dispatcher.BeginInvoke( async () => {
             try {
+                if (isClosed)
+                    return;
+
                 var path = tbRecordSaveDir.Text.Trim();
-                var error = await Task.Run( () => check( path ) );
+                var error = await Task.Run( () => checkDirectory( path ) );
                 tbRecordSaveDirError.textOrGone( error ?? "" );
             } catch (Exception ex) {
                 Log.e( ex, "checkRecordSaveDir() failed." );
@@ -336,8 +275,42 @@ namespace StarGarner.Dialog {
             }
         } );
 
-        void testSound()
-          => ( (SoundActor?)lbSoundActor.SelectedItem )?.test( mainWindow?.notificationSound, NotificationSound.allOther);
+        //############################################################################
+
+        private Boolean isChanged() => Utils.or(
+            MyResourceRequestHandler.responseLogEnabled != ( cbResponseLog.IsChecked ?? false )
+            , mainWindow.httpServer.enabled != ( cbListen.IsChecked ?? false )
+            , mainWindow.httpServer.listenAddr != tbListenAddress.Text.Trim()
+            , mainWindow.httpServer.listenPort != tbListenPort.Text.Trim()
+            , mainWindow.recorderHub.saveDir != tbRecordSaveDir.Text.Trim()
+            , mainWindow.recorderHub.ffmpegPath != tbRecordFfmpegPath.Text.Trim()
+            , mainWindow.recorderHub.isRoomListChanged( uiRoomList )
+            , mainWindow.soundActor != selectedSoundActor?.Name
+            );
+
+        private void updateApplyButton() => btnApply.IsEnabled = isChanged();
+
+        void save() {
+            if (!isChanged())
+                return;
+
+            var st = selectedSoundActor;
+            if (st != null)
+                mainWindow.soundActor = st.Name;
+
+            MyResourceRequestHandler.responseLogEnabled = cbResponseLog.IsChecked ?? false;
+
+            mainWindow.httpServer.enabled = cbListen.IsChecked ?? false;
+            mainWindow.httpServer.listenAddr = tbListenAddress.Text.Trim();
+            mainWindow.httpServer.listenPort = tbListenPort.Text.Trim();
+            mainWindow.httpServer.updateListening();
+
+            mainWindow.recorderHub.saveDir = tbRecordSaveDir.Text.Trim();
+            mainWindow.recorderHub.ffmpegPath = tbRecordFfmpegPath.Text.Trim();
+            mainWindow.recorderHub.setRoomList( uiRoomList );
+
+            mainWindow.saveOtherSetting();
+        }
 
         //############################################################################
 
@@ -346,8 +319,9 @@ namespace StarGarner.Dialog {
             base.OnClosed( e );
         }
 
-        public OtherSettingDialog(MainWindow main) {
-            this.Owner = main;
+        public OtherSettingDialog(MainWindow mainWindow) {
+            this.mainWindow = mainWindow;
+            this.Owner = mainWindow;
             this.WindowStartupLocation = WindowStartupLocation.CenterOwner;
             this.SourceInitialized += (x, y) => this.HideMinimizeAndMaximizeButtons();
 
@@ -355,12 +329,12 @@ namespace StarGarner.Dialog {
 
             // load ui value
             cbResponseLog.IsChecked = MyResourceRequestHandler.responseLogEnabled;
-            cbListen.IsChecked = main.httpServer.enabled;
-            tbListenAddress.Text = main.httpServer.listenAddr;
-            tbListenPort.Text = main.httpServer.listenPort;
-            tbRecordSaveDir.Text = main.recorderHub.saveDir;
-            tbRecordFfmpegPath.Text = main.recorderHub.ffmpegPath;
-            loadRecorderItems();
+            cbListen.IsChecked = mainWindow.httpServer.enabled;
+            tbListenAddress.Text = mainWindow.httpServer.listenAddr;
+            tbListenPort.Text = mainWindow.httpServer.listenPort;
+            tbRecordSaveDir.Text = mainWindow.recorderHub.saveDir;
+            tbRecordFfmpegPath.Text = mainWindow.recorderHub.ffmpegPath;
+            loadRecordRoom();
 
             // add event handler
             cbResponseLog.Checked += (sender, e) => updateApplyButton();
@@ -370,8 +344,15 @@ namespace StarGarner.Dialog {
             tbListenAddress.TextChanged += (sender, e) => updateApplyButton();
             tbListenPort.TextChanged += (sender, e) => updateApplyButton();
 
-            tbRecordSaveDir.TextChanged += (sender, e) => checkRecordSaveDir();
-            tbRecordFfmpegPath.TextChanged += (sender, e) => checkRecordFfmpegPath();
+            tbRecordSaveDir.TextChanged += (sender, e) => {
+                updateApplyButton();
+                checkRecordSaveDir();
+            };
+
+            tbRecordFfmpegPath.TextChanged += (sender, e) => {
+                updateApplyButton();
+                checkRecordFfmpegPath();
+            };
 
             // add event handler to bottom buttons
             btnCancel.Click += (sender, e) => Close();

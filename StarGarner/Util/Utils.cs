@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Data;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -67,7 +68,7 @@ namespace StarGarner.Util {
         public static T firstOrNull<T>(this List<T> list) => list.elementOrNull( 0 );
         public static T lastOrNull<T>(this List<T> list) => list.elementOrNull( list.Count - 1 );
 
-        public static T GetOrNull<T>(this WeakReference<T> wr) where T : class {
+        public static T getOrNull<T>(this WeakReference<T> wr) where T : class {
             wr.TryGetTarget( out var d );
             return d;
         }
@@ -185,5 +186,8 @@ namespace StarGarner.Util {
 
         public static String decodeEntity(this String src)
             => WebUtility.HtmlDecode( src );
+
+        public static Boolean or(params Boolean[] values) 
+            => values.Where( (it) => it ).Any();
     }
 }

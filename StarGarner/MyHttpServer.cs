@@ -51,7 +51,7 @@ namespace StarGarner {
 
         private void setStatus(String s) {
             serverStatus = s;
-            window.refSettingDialogOther?.GetOrNull()?.showServerStatus();
+            window.refSettingDialogOther?.getOrNull()?.showServerStatus();
         }
 
         public void updateListening() => Task.Run( () => {
