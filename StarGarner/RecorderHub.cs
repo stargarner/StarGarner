@@ -137,9 +137,7 @@ namespace StarGarner {
         internal Int64 roomId;
         internal String roomCaption;
 
-        internal RecordRoom? parentRoom;
         internal Boolean isRecordingUi;
-
 
         private Int64 lastCheckTime = 0L;
         private Task? lastCheckTask = null;
@@ -258,13 +256,7 @@ namespace StarGarner {
                 // streamUrl が決定しても動画が開始しているとは限らない
                 request = new HttpRequestMessage( HttpMethod.Get, streamUrl );
                 response = await Config.httpClient.SendAsync( request ).ConfigureAwait( false );
-                Int32 code;
-                try {
-                    code = (Int32)response.StatusCode;
-                } catch (Exception ex) {
-                    Log.e( ex, "can't get numeric http status code" );
-                    code = -1;
-                }
+                var code = response.codeInt();
                 Log.d( $"{roomName}: {code} {response.ReasonPhrase} {streamUrl}" );
                 if (!response.IsSuccessStatusCode)
                     return;
@@ -356,11 +348,15 @@ namespace StarGarner {
         internal volatile String ffmpegPath = "C:/cygwin64/bin/ffmpeg.exe";
 
         internal readonly MainWindow mainWindow;
-        internal readonly List<RecordRoom> roomList = new List<RecordRoom>();
         public volatile Boolean isDisposed = false;
+
+        private readonly ConcurrentDictionary<String, RecordRoom> roomMap
+            = new ConcurrentDictionary<String, RecordRoom>();
 
         private readonly ConcurrentDictionary<String, Recording> recordingMap
             = new ConcurrentDictionary<String, Recording>();
+
+
 
         internal Recording? getRecording(String roomName)
             => recordingMap.getOrNull( roomName );
@@ -378,23 +374,19 @@ namespace StarGarner {
         internal RecorderHub(MainWindow mainWindow)
             => this.mainWindow = mainWindow;
 
-        internal JObject encodeSetting() {
-            lock (roomList) {
-                return new JObject {
-                { Config.KEY_SAVE_DIR, saveDir },
-                { Config.KEY_FFMPEG_PATH, ffmpegPath },
-                { Config.KEY_ROOMS,
-                    new JArray( roomList.Select( (room)
-                        => new JObject {
-                            { Config.KEY_ROOM_NAME, room.roomName },
-                            { Config.KEY_ROOM_ID, room.roomId },
-                            { Config.KEY_ROOM_CAPTION, room.roomCaption }
-                        }
-                    ) )
-                }
-            };
+        internal JObject encodeSetting() => new JObject {
+            { Config.KEY_SAVE_DIR, saveDir },
+            { Config.KEY_FFMPEG_PATH, ffmpegPath },
+            { Config.KEY_ROOMS,
+                new JArray( roomMap.Values.Select( (room)
+                    => new JObject {
+                        { Config.KEY_ROOM_NAME, room.roomName },
+                        { Config.KEY_ROOM_ID, room.roomId },
+                        { Config.KEY_ROOM_CAPTION, room.roomCaption }
+                    }
+                ) )
             }
-        }
+        };
 
         internal void load(JObject src) {
             var sv = src.Value<String>( Config.KEY_SAVE_DIR );
@@ -407,20 +399,13 @@ namespace StarGarner {
 
             var av = src.Value<JArray>( Config.KEY_ROOMS );
             if (av != null) {
-                lock (roomList) {
-                    roomList.Clear();
-                    foreach (var r in av) {
-                        var id = r.Value<Int64?>( Config.KEY_ROOM_ID );
-
-                        if (id == null)
-                            continue;
-
-                        roomList.Add( new RecordRoom(
-                            r.Value<String>( Config.KEY_ROOM_NAME ),
-                             id.Value,
-                             r.Value<String>( Config.KEY_ROOM_CAPTION )
-                            ) );
-                    }
+                foreach (var r in av) {
+                    var id = r.Value<Int64?>( Config.KEY_ROOM_ID );
+                    var name = r.Value<String?>( Config.KEY_ROOM_NAME );
+                    var caption = r.Value<String?>( Config.KEY_ROOM_CAPTION ) ?? "";
+                    if (id == null || name == null)
+                        continue;
+                    roomMap[ name ] = new RecordRoom( name, id.Value, caption );
                 }
             }
         }
@@ -428,13 +413,8 @@ namespace StarGarner {
 
 
         // タイマーから定期的に呼ばれる
-        internal void step() {
-            lock (roomList) {
-                foreach (var room in roomList) {
-                    Task.Run( () => room.step( this ) );
-                }
-            }
-        }
+        internal void step() 
+            => roomMap.Values.ForEach( (r) => Task.Run( () => r.step( this ) ) );
 
         // 録画状態の変化をUIに通知する
         internal void showStatus() {
@@ -444,69 +424,62 @@ namespace StarGarner {
         }
 
         // 録画対象リストを返す
-        internal List<RecordRoom> getRoomList() {
-            lock (roomList) {
-                return new List<RecordRoom>( roomList );
-            }
-        }
+        internal List<RecordRoom> getRoomList() 
+            => new List<RecordRoom>( roomMap.Values );
+
         internal void setRoomList(IEnumerable<RecordRoom>? src) {
             if (src == null)
                 return;
 
-            lock (roomList) {
-                var oldList = new List<RecordRoom>( roomList );
-                roomList.Clear();
-                foreach (var s in src) {
-                    var old = oldList.Find( (x) => x.roomName.Equals( s.roomName ) );
-                    if (old != null) {
-                        old.roomId = s.roomId;
-                        old.roomCaption = s.roomCaption;
-                        oldList.Remove( old );
-                        roomList.Add( old );
-                    } else {
-                        roomList.Add( s );
-                    }
+            var oldNames = roomMap.Values.Select( (it) => it.roomName ).ToHashSet();
+            foreach (var s in src) {
+                oldNames.Remove( s.roomName );
+                var old = roomMap.GetValueOrDefault( s.roomName );
+                if (old != null) {
+                    old.roomId = s.roomId;
+                    old.roomCaption = s.roomCaption;
+                } else {
+                    roomMap[ s.roomName ] = new RecordRoom( s );
                 }
-                foreach (var a in oldList) {
-                    recordingMap.removeOrNull( a.roomName )?.Dispose();
-                }
+            }
+            foreach (var name in oldNames) {
+                roomMap.removeOrNull( name );
+                recordingMap.removeOrNull( name )?.Dispose();
             }
         }
         // 設定UIと現在の設定が異なるなら真
         internal Boolean isRoomListChanged(IEnumerable<RecordRoom> uiRoomList) {
-            lock (roomList) {
-                var uiSet = new SortedSet<RecordRoom>( uiRoomList );
-                var currentSet = new SortedSet<RecordRoom>( roomList );
+            var uiSet = new SortedSet<RecordRoom>( uiRoomList );
+            var currentSet = new SortedSet<RecordRoom>( roomMap.Values );
 
-                if (uiSet.Count != currentSet.Count)
+            if (uiSet.Count != currentSet.Count)
+                return true;
+
+            var ia = uiSet.GetEnumerator();
+            var ib = currentSet.GetEnumerator();
+            while (ia.MoveNext()) {
+                ib.MoveNext();
+                var a = ia.Current;
+                var b = ib.Current;
+
+                if (a.roomName != b.roomName || a.roomId != b.roomId || a.roomCaption != b.roomCaption)
                     return true;
-
-                var ia = uiSet.GetEnumerator();
-                var ib = currentSet.GetEnumerator();
-                while (ia.MoveNext()) {
-                    ib.MoveNext();
-                    var a = ia.Current;
-                    var b = ib.Current;
-
-                    if (a.roomName != b.roomName || a.roomId != b.roomId || a.roomCaption != b.roomCaption)
-                        return true;
-                }
-
-                return false;
             }
+
+            return false;
         }
 
         // 録画ステータスの表示
         internal void dumpStatus(StatusCollection dst) {
-            lock (roomList) {
-                foreach (var room in roomList) {
-                    var recording = getRecording( room.roomName );
-                    if (recording?.isRunning == true) {
-                        dst.add( $"録画中 {room.roomName} {room.roomCaption}" );
-                        var line = recording.getLine();
-                        if (line != null)
-                            dst.add( line );
-                    }
+            var rooms = roomMap.Values.ToList();
+            rooms.Sort();
+            foreach (var room in rooms) {
+                var recording = getRecording( room.roomName );
+                if (recording?.isRunning == true) {
+                    dst.add( $"録画中 {room.roomName} {room.roomCaption}" );
+                    var line = recording.getLine();
+                    if (line != null)
+                        dst.add( line );
                 }
             }
         }

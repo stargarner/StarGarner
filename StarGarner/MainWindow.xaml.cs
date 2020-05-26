@@ -37,6 +37,8 @@ namespace StarGarner {
 
         internal readonly RecorderHub recorderHub;
 
+        internal readonly CasterHub casterHub;
+
         // ウィンドウを閉じたら真
         private Boolean isClosed = false;
 
@@ -152,6 +154,7 @@ namespace StarGarner {
 
             try {
 
+                casterHub.dumpStatus( statusA );
                 recorderHub.dumpStatus( statusA );
 
                 var room = currentRoom;
@@ -246,6 +249,7 @@ namespace StarGarner {
                 }
             }
         } );
+       
 
         //###########################################################################
         // in-app browser event
@@ -270,7 +274,10 @@ namespace StarGarner {
             }
         } );
 
-        internal void onRequestCookie(String cookie) => Dispatcher.BeginInvoke( () => onLiveChecker.setCookie( cookie ) );
+        internal void onRequestCookie(String cookie) => Dispatcher.BeginInvoke( () => {
+            onLiveChecker.setCookie( cookie );
+            casterHub.setCookie( cookie );
+        } );
 
         public void onNotLive() => Dispatcher.BeginInvoke( () => {
             try {
@@ -483,6 +490,7 @@ namespace StarGarner {
                 { Config.KEY_LISTEN_ADDR, httpServer.listenAddr },
                 { Config.KEY_LISTEN_PORT, httpServer.listenPort },
                 { Config.KEY_RECORDER_HUB, recorderHub.encodeSetting() },
+                { Config.KEY_CASTER_HUB, casterHub.encodeSetting() },
                 { Config.KEY_SOUND_ACTOR, soundActor }
             }.saveTo( Config.FILE_UI_JSON );
 
@@ -526,6 +534,10 @@ namespace StarGarner {
                 var ov = root.Value<JObject>( Config.KEY_RECORDER_HUB );
                 if (ov != null)
                     recorderHub.load( ov );
+
+                ov = root.Value<JObject>( Config.KEY_CASTER_HUB);
+                if (ov != null)
+                    casterHub.load( ov );
 
             } catch (Exception ex) {
                 Log.e( ex, "loadUI failed." );
@@ -594,6 +606,10 @@ namespace StarGarner {
             () => refSettingDialogOther?.getOrNull()?.showRecorderStatus()
         );
 
+        internal void showCasterStatus() => Dispatcher.BeginInvoke(
+            () => refSettingDialogOther?.getOrNull()?.showCasterStatus()
+        );
+
         internal void play(String soundName)
             => notificationSound.play( soundActor, soundName );
 
@@ -604,6 +620,7 @@ namespace StarGarner {
             isClosed = true;
             timer.Stop();
             recorderHub.Dispose();
+            casterHub.Dispose();
             cefBrowser.Dispose();
             base.OnClosed( e );
             Utils.singleTask.complete();
@@ -612,6 +629,7 @@ namespace StarGarner {
 
         public MainWindow() {
             this.onLiveChecker = new OnliveChecker( this );
+            this.casterHub = new CasterHub( this );
             this.httpServer = new MyHttpServer( this );
             this.recorderHub = new RecorderHub( this );
 
@@ -676,6 +694,7 @@ namespace StarGarner {
                 onLiveChecker.run();
                 step( "timer" );
                 recorderHub.step();
+                casterHub.step();
             };
 
             isInInitialize = false;

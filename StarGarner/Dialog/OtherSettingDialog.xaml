@@ -152,6 +152,60 @@
                         </ListBox>
                     </StackPanel>
                 </GroupBox>
+
+                <GroupBox Margin="4">
+                    <GroupBox.Header>
+                        <Label Content="自動投げ" />
+                    </GroupBox.Header>
+                    <StackPanel Orientation="Vertical">
+
+                        <StackPanel
+                            Margin="0,8,0,2"
+                            Orientation="Horizontal">
+                            <Label Content="投げる部屋" />
+                            <Button
+                                x:Name="btnCastAdd"
+                                Grid.Column="2"
+                                Height="28"
+                                Margin="8,0,0,0"
+                                Padding="8,0,8,0"
+                                x:FieldModifier="private"
+                                Content="追加" />
+                        </StackPanel>
+                        <ListBox
+                            x:Name="lbCast"
+                            MinHeight="0"
+                            MaxHeight="800"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Top"
+                            x:FieldModifier="private"
+                            SelectionMode="Single">
+                            <ListBox.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem
+                                        Click="lbCast_View"
+                                        Header="ブラウザで開く" />
+                                    <MenuItem
+                                        Click="lbCast_Delete"
+                                        Header="削除" />
+                                </ContextMenu>
+                            </ListBox.ContextMenu>
+
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Border MinHeight="24">
+                                        <TextBlock
+                                            VerticalAlignment="Center"
+                                            DockPanel.Dock="Left"
+                                            Text="{Binding Text}"
+                                            TextWrapping="Wrap" />
+                                    </Border>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </StackPanel>
+                </GroupBox>
+
                 <GroupBox Margin="4">
                     <GroupBox.Header>
                         <CheckBox

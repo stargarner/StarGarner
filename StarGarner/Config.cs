@@ -77,6 +77,7 @@ namespace StarGarner {
         internal const String KEY_LISTEN_ADDR = "listenAddr";
         internal const String KEY_LISTEN_PORT = "listenPort";
         internal const String KEY_RECORDER_HUB = "recorderHub";
+        internal const String KEY_CASTER_HUB = "casterHub";
 
         internal const String KEY_SAVE_DIR = "saveDir";
         internal const String KEY_FFMPEG_PATH = "ffmpegPath";

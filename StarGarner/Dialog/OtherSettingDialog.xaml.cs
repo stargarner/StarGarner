@@ -35,7 +35,7 @@ namespace StarGarner.Dialog {
 
         //############################################################################
 
-        private readonly ObservableCollection<RecordRoom> uiRoomList = new ObservableCollection<RecordRoom>();
+        private readonly ObservableCollection<RecordRoom> uiRecordRoomList = new ObservableCollection<RecordRoom>();
 
         private RecordRoom? selectedRecordRoom => (RecordRoom?)lbRecord.SelectedItem;
 
@@ -82,7 +82,7 @@ namespace StarGarner.Dialog {
             var i = lbRecord.SelectedIndex;
             if (i == -1)
                 return;
-            uiRoomList.RemoveAt( i );
+            uiRecordRoomList.RemoveAt( i );
             updateApplyButton();
         }
 
@@ -99,7 +99,7 @@ namespace StarGarner.Dialog {
             validator: (x) => {
                 try {
                     var roomName = getRoomName( x );
-                    foreach (var r in uiRoomList) {
+                    foreach (var r in uiRecordRoomList) {
                         if (r.roomName == roomName) {
                             throw new DuplicateNameException( $"部屋 {roomName} は既に登録済みです" );
                         }
@@ -118,12 +118,12 @@ namespace StarGarner.Dialog {
                         throw new InvalidOperationException( "mainWindow is null." );
 
                     var room = await Task.Run( () => RecordRoom.find( roomName ) );
-                    foreach (var r in uiRoomList) {
+                    foreach (var r in uiRecordRoomList) {
                         if (r.roomId == room.roomId) {
                             throw new DuplicateNameException( $"room_id {room.roomId} is duplicated. used in {r.roomName} and {room.roomName} ." );
                         }
                     }
-                    var idx = uiRoomList.InsertSorted( room );
+                    var idx = uiRecordRoomList.InsertSorted( room );
                     lbRecord.SelectedIndex = idx;
                     updateApplyButton();
                     return null;
@@ -141,9 +141,9 @@ namespace StarGarner.Dialog {
 
             source.Sort();
 
-            uiRoomList.Clear();
-            source.ForEach( (it) => uiRoomList.Add( new RecordRoom( it ) ) );
-            lbRecord.ItemsSource = uiRoomList;
+            uiRecordRoomList.Clear();
+            source.ForEach( (it) => uiRecordRoomList.Add( new RecordRoom( it ) ) );
+            lbRecord.ItemsSource = uiRecordRoomList;
         }
 
         internal void showRecorderStatus() {
@@ -152,11 +152,106 @@ namespace StarGarner.Dialog {
 
             var hub = mainWindow.recorderHub;
 
-            foreach (var a in uiRoomList) {
+            foreach (var a in uiRecordRoomList) {
                 a.isRecordingUi = hub.getRecording( a.roomName )?.isRunning == true;
             }
 
             lbRecord.Items.Refresh();
+        }
+
+        //############################################################################
+
+        private readonly ObservableCollection<CastRoom> uiCastRoomList = new ObservableCollection<CastRoom>();
+
+        private CastRoom? selectedCastRoom => (CastRoom?)lbCast.SelectedItem;
+
+        private void lbCast_View(Object sender, RoutedEventArgs e) {
+            var room = selectedCastRoom;
+            if (room == null)
+                return;
+
+            var p = new Process();
+            p.StartInfo.CreateNoWindow = true;
+            p.StartInfo.FileName = "cmd";
+            p.StartInfo.Arguments = $"/C start {room.url}";
+            p.Start();
+        }
+
+
+        private void lbCast_Delete(Object sender, RoutedEventArgs e) {
+            var i = lbCast.SelectedIndex;
+            if (i == -1)
+                return;
+            uiCastRoomList.RemoveAt( i );
+            updateApplyButton();
+        }
+
+        private void addCast() => new OneLineTextInputDialog(
+            this,
+            caption: $"投げる部屋のURL",
+            initialValue: "",
+            inputRestriction: OneLineTextInputDialog.InputStyle.RoomUrl,
+            validator: (x) => {
+                try {
+                    var roomName = getRoomName( x );
+                    foreach (var r in uiCastRoomList) {
+                        if (r.roomName == roomName) {
+                            throw new DuplicateNameException( $"部屋 {roomName} は既に登録済みです" );
+                        }
+                    }
+                    return null;
+                } catch (Exception ex) {
+                    return ex.Message;
+                }
+            },
+            onOk: async (x) => {
+                try {
+                    var roomName = getRoomName( x );
+
+                    var mainWindow = this.mainWindow;
+                    if (mainWindow == null)
+                        throw new InvalidOperationException( "mainWindow is null." );
+
+                    var room = await Task.Run( () => CastRoom.find( roomName ) );
+                    foreach (var r in uiCastRoomList) {
+                        if (r.roomId == room.roomId) {
+                            throw new DuplicateNameException( $"room_id {room.roomId} is duplicated. used in {r.roomName} and {room.roomName} ." );
+                        }
+                    }
+                    var idx = uiCastRoomList.InsertSorted( room );
+                    lbCast.SelectedIndex = idx;
+                    updateApplyButton();
+                    return null;
+                } catch (Exception ex) {
+                    Log.e( ex, "addCast failed." );
+                    return ex.Message;
+                }
+            }
+        ).Show();
+
+        private void loadCastRoom() {
+            var source = mainWindow.casterHub.getRoomList();
+            if (source == null)
+                return;
+
+            source.Sort();
+
+            uiCastRoomList.Clear();
+            source.ForEach( (it) => uiCastRoomList.Add( new CastRoom( it ) ) );
+            lbCast.ItemsSource = uiCastRoomList;
+        }
+
+        internal void showCasterStatus() {
+            if (isClosed)
+                return;
+
+            var hub = mainWindow.casterHub;
+
+            foreach (var a in uiCastRoomList) {
+                a.isCastingUi = hub.getCasting( a.roomName )?.isCasting == true;
+            }
+
+            lbCast.Items.Refresh();
         }
 
         //############################################################################
@@ -284,7 +379,8 @@ namespace StarGarner.Dialog {
             , mainWindow.httpServer.listenPort != tbListenPort.Text.Trim()
             , mainWindow.recorderHub.saveDir != tbRecordSaveDir.Text.Trim()
             , mainWindow.recorderHub.ffmpegPath != tbRecordFfmpegPath.Text.Trim()
-            , mainWindow.recorderHub.isRoomListChanged( uiRoomList )
+            , mainWindow.recorderHub.isRoomListChanged( uiRecordRoomList )
+            , mainWindow.casterHub.isRoomListChanged( uiCastRoomList)
             , mainWindow.soundActor != selectedSoundActor?.Name
             );
 
@@ -307,7 +403,9 @@ namespace StarGarner.Dialog {
 
             mainWindow.recorderHub.saveDir = tbRecordSaveDir.Text.Trim();
             mainWindow.recorderHub.ffmpegPath = tbRecordFfmpegPath.Text.Trim();
-            mainWindow.recorderHub.setRoomList( uiRoomList );
+            mainWindow.recorderHub.setRoomList( uiRecordRoomList );
+
+            mainWindow.casterHub.setRoomList( uiCastRoomList);
 
             mainWindow.saveOtherSetting();
         }
@@ -335,6 +433,7 @@ namespace StarGarner.Dialog {
             tbRecordSaveDir.Text = mainWindow.recorderHub.saveDir;
             tbRecordFfmpegPath.Text = mainWindow.recorderHub.ffmpegPath;
             loadRecordRoom();
+            loadCastRoom();
 
             // add event handler
             cbResponseLog.Checked += (sender, e) => updateApplyButton();
@@ -361,6 +460,8 @@ namespace StarGarner.Dialog {
 
             btnRecordAdd.Click += (sender, e) => addRecord();
 
+            btnCastAdd.Click += (sender, e) => addCast();
+
             SoundActor.initListBox( lbSoundActor, mainWindow.soundActor );
             lbSoundActor.SelectionChanged += (sender, e) => updateApplyButton();
             btnTestSoundActor.Click += (sender, e) => testSound();
@@ -371,6 +472,7 @@ namespace StarGarner.Dialog {
             updateApplyButton();
 
             showRecorderStatus();
+            showCasterStatus();
         }
     }
 }

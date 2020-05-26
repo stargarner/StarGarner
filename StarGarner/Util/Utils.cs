@@ -8,6 +8,7 @@ using System.Data;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -188,10 +189,19 @@ namespace StarGarner.Util {
             => WebUtility.HtmlDecode( src );
 
         // |や&で連結するより , で区切る方が演算子の優先順位の問題が少ない
-        public static Boolean or(params Boolean[] values) 
+        public static Boolean or(params Boolean[] values)
             => values.Where( (it) => it ).Any();
 
         public static Boolean and(params Boolean[] values)
-            => ! values.Where( (it) => !it ).Any();
+            => !values.Where( (it) => !it ).Any();
+
+        public static Int32 codeInt(this HttpResponseMessage response) {
+            try {
+                return (Int32)response.StatusCode;
+            } catch (Exception ex) {
+                Log.e( ex, $"HttpResponseMessage.StatusCode is not numeric. {response.StatusCode}" );
+                return -1;
+            }
+        }
     }
 }
