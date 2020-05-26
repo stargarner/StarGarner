@@ -103,7 +103,7 @@
                         <StackPanel
                             Margin="0,8,0,2"
                             Orientation="Horizontal">
-                            <Label Content="録画する部屋" />
+                            <Label Content="対象の部屋" />
                             <Button
                                 x:Name="btnRecordAdd"
                                 Grid.Column="2"
@@ -155,14 +155,14 @@
 
                 <GroupBox Margin="4">
                     <GroupBox.Header>
-                        <Label Content="自動投げ" />
+                        <Label Content="自動投げ・カウント" />
                     </GroupBox.Header>
                     <StackPanel Orientation="Vertical">
 
                         <StackPanel
                             Margin="0,8,0,2"
                             Orientation="Horizontal">
-                            <Label Content="投げる部屋" />
+                            <Label Content="対象の部屋" />
                             <Button
                                 x:Name="btnCastAdd"
                                 Grid.Column="2"
