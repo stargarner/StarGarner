@@ -54,6 +54,7 @@ namespace StarGarner {
     }
 
     public class NotificationSound : IDisposable {
+        static readonly Log log = new Log( "NotificationSound" );
 
         public const String exceedError = "exceedError.m4a";
         public const String exceedReset = "exceedReset.m4a";
@@ -92,7 +93,7 @@ namespace StarGarner {
                     try {
                         d = Directory.GetParent( d )?.FullName;
                     } catch (Exception ex) {
-                        Log.e( ex, "Directory.GetParent failed." );
+                        log.e( ex, "Directory.GetParent failed." );
                         break;
                     }
                 }
@@ -120,7 +121,7 @@ namespace StarGarner {
             try {
                 playerMap.removeOrNull( fullPath )?.Dispose();
             } catch (Exception ex) {
-                Log.e( ex, "NotificationSound.stop failed." );
+                log.e( ex, "stop failed." );
             }
         }
 
@@ -137,7 +138,7 @@ namespace StarGarner {
             try {
                 playerMap[ fullPath ] = new PlayingInfo( fullPath );
             } catch (Exception ex) {
-                Log.e( ex, "NotificationSound.play failed." );
+                log.e( ex, "play failed." );
             }
         }
 
@@ -150,7 +151,7 @@ namespace StarGarner {
         }
 
         public void Dispose() {
-            Log.d( "NotificationSound.Dispose" );
+            log.d( "Dispose" );
             isDisposed = true;
             playerMap.Values.ForEach( (it) => it.Dispose() );
         }

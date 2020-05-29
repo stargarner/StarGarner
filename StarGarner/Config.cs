@@ -10,6 +10,7 @@ using System.Text.RegularExpressions;
 namespace StarGarner {
 
     internal static class Config {
+        static readonly Log log = new Log( "Config" );
 
         private const String AES_IV = @"pf69DL6grWFyZcMK";
         private const String AES_Key = @"9Fix4L4hB4PKeKWY";
@@ -103,8 +104,8 @@ namespace StarGarner {
         // コード中に特定の単語を含めないための暗号化
         private static String test(String plainText) {
             var sv = e( plainText );
-            Log.d( $"e: {sv}" );
-            Log.d( $"d: {d( sv )}" );
+            log.d( $"e: {sv}" );
+            log.d( $"d: {d( sv )}" );
             return plainText;
         }
 

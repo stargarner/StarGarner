@@ -6,6 +6,7 @@ namespace StarGarner.Util {
 
     // データの保存など、並行性があるのが好ましくない処理に使う
     public class SingleTask : IDisposable {
+        static readonly Log log = new Log( "SingleTask" );
 
         private readonly Channel<Action> channel = Channel.CreateUnbounded<Action>( new UnboundedChannelOptions() {
             SingleReader = true
@@ -15,7 +16,7 @@ namespace StarGarner.Util {
             try {
                 await channel.Writer.WriteAsync( action ).ConfigureAwait( false );
             } catch (Exception ex) {
-                Log.e( ex, "channel write error." );
+                log.e( ex, "channel write error." );
             }
         }
 
@@ -23,7 +24,7 @@ namespace StarGarner.Util {
             try {
                 channel.Writer.Complete();
             } catch (Exception ex) {
-                Log.e( ex, "channel complete error." );
+                log.e( ex, "channel complete error." );
             }
         }
 
@@ -36,12 +37,12 @@ namespace StarGarner.Util {
                         try {
                             item.Invoke();
                         } catch (Exception ex) {
-                            Log.e( ex, "action error." );
+                            log.e( ex, "action error." );
                         }
                     }
                 }
             } catch (Exception ex) {
-                Log.e( ex, "channel read error." );
+                log.e( ex, "channel read error." );
             }
         } );
     }

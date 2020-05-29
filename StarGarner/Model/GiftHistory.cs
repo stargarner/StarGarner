@@ -6,6 +6,8 @@ using System.Collections.Generic;
 namespace StarGarner.Model {
 
     public class GiftHistory {
+        static readonly Log log = new Log( "GiftHistory" );
+
         private class Item : IComparable<Item> {
 
             public readonly Int64 time;
@@ -29,7 +31,7 @@ namespace StarGarner.Model {
 
                     return new Item( Int64.Parse(time),count);
                 } catch (Exception ex) {
-                    Log.e( ex, "History.decodeJson failed." );
+                    log.e( ex, "History.decodeJson failed." );
                     return null;
                 }
             }
@@ -64,7 +66,7 @@ namespace StarGarner.Model {
         // 取得履歴をログに出力する
         public void dump(String caption) {
             foreach (var h in list) {
-                Log.d( $"{caption} {itemName} {h}" );
+                log.d( $"{caption} {itemName} {h}" );
             }
         }
 
@@ -109,7 +111,7 @@ namespace StarGarner.Model {
                 if (lastStart == null || lastStart.time < now - UnixTime.hour1 * 1L - 1000L) {
                     // count==1の要素がないか、古すぎるなら履歴を初期化する
                     if (list.Count > 0) {
-                        Log.d( "History.trim: history initialize!" );
+                        log.d( "History.trim: history initialize!" );
                         list.Clear();
                         lastStart = null;
                     }
@@ -123,7 +125,7 @@ namespace StarGarner.Model {
                         }
                     }
                     if (removeCount > 0) {
-                        Log.d( $"History.trim: history remove {removeCount}" );
+                        log.d( $"History.trim: history remove {removeCount}" );
                     }
                 }
 
@@ -153,9 +155,9 @@ namespace StarGarner.Model {
             // 解除予測が変化したらログ出力する
             if (lastExpectedReset != null && lastExpectedReset != newValue) {
                 if (newValue == 0L) {
-                    Log.d( $"{itemName} 解除予測がリセットされました。" );
+                    log.d( $"{itemName} 解除予測がリセットされました。" );
                 } else {
-                    Log.d( $"{itemName} 解除予測が変わりました。{newValue.formatTime( showMillisecond: true )} 残り{( newValue - now ).formatDuration()}" );
+                    log.d( $"{itemName} 解除予測が変わりました。{newValue.formatTime( showMillisecond: true )} 残り{( newValue - now ).formatDuration()}" );
                 }
             }
             lastExpectedReset = newValue;

@@ -6,6 +6,7 @@ using System.Text;
 namespace StarGarner.Model {
 
     public class GiftCounts {
+        static readonly Log log = new Log( "GiftCounts" );
 
         private readonly String itemName;
 
@@ -64,7 +65,7 @@ namespace StarGarner.Model {
             if (digest != lastDigest) {
                 lastDigest = digest;
                 map = src;
-                Log.d( $"GiftCounts.set {itemName} {digest}" );
+                log.d( $"set {itemName} {digest}" );
             }
 
             // 調査完了を検知するため、変化がなくても更新時刻は上書きする

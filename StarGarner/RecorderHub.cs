@@ -16,6 +16,7 @@ namespace StarGarner {
 
     // 録画中情報
     internal class Recording : IDisposable {
+        static readonly Log log = new Log( "Recording" );
 
         static readonly Regex reSpaces = new Regex( @"\s+" );
         static readonly Regex reSpeed = new Regex( @"\s*\bspeed=[\s\d.]+x\s*\z|\s*q=-1\.0\b" );
@@ -47,10 +48,10 @@ namespace StarGarner {
                         if (countWarningNonMonotonous >= 10)
                             continue;
 
-                        Log.d( line );
+                        log.d( line );
 
                         if (++countWarningNonMonotonous == 10) {
-                            Log.d( "(Suppresses repeated warnings…)" );
+                            log.d( "(Suppresses repeated warnings…)" );
                         }
 
                     } else {
@@ -59,7 +60,7 @@ namespace StarGarner {
                         if (fps >= 1) {
                             // not log, but show in status window
                         } else {
-                            Log.d( line );
+                            log.d( line );
                         }
                     }
 
@@ -70,7 +71,7 @@ namespace StarGarner {
                     }
                 }
             } catch (Exception ex) {
-                Log.e( ex, "readStream failed." );
+                log.e( ex, "readStream failed." );
             }
         }
 
@@ -98,7 +99,7 @@ namespace StarGarner {
             p.EnableRaisingEvents = true;
             p.Exited += (sender, args) => {
                 timeExit = UnixTime.now;
-                Log.d( $"{roomName}: recording process was exited." );
+                log.d( $"{roomName}: recording process was exited." );
                 hub.mainWindow.play( NotificationSound.recordingEnd );
 
                 hub.showStatus();
@@ -114,11 +115,11 @@ namespace StarGarner {
         public void Dispose() {
             try {
                 if (!process.HasExited) {
-                    Log.d( $"{roomName}: Dispose: call Kill()." );
+                    log.d( $"{roomName}: Dispose: call Kill()." );
                     process.Kill();
                 }
             } catch (Exception ex) {
-                Log.e( ex, "Dispose error." );
+                log.e( ex, "Dispose error." );
             }
         }
 
@@ -131,6 +132,8 @@ namespace StarGarner {
 
     // 録画対象の部屋
     internal class RecordRoom : IComparable<RecordRoom> {
+        static readonly Log log = new Log( "RecordRoom" );
+
         static readonly Regex rePathDelimiter = new Regex( @"[/\\]+" );
 
         internal readonly String roomName;
@@ -152,7 +155,7 @@ namespace StarGarner {
             try {
                 Directory.CreateDirectory( dir );
             } catch (Exception ex) {
-                Log.e( ex, "CreateDirectory() failed." );
+                log.e( ex, "CreateDirectory() failed." );
             }
 
             return dir;
@@ -194,12 +197,12 @@ namespace StarGarner {
         async Task check(RecorderHub hub) {
             try {
                 if (!File.Exists( hub.ffmpegPath )) {
-                    Log.e( $"ffmpegPath '${hub.ffmpegPath}' is not valid." );
+                    log.e( $"ffmpegPath '${hub.ffmpegPath}' is not valid." );
                 }
 
                 var folder = getFolder( hub );
                 if (!Directory.Exists( folder )) {
-                    Log.e( $"folder '${folder}' is not valid." );
+                    log.e( $"folder '${folder}' is not valid." );
                 }
 
                 // オンライブ部屋一覧にあるストリーミング情報はあまり信用できないので読み直す
@@ -213,10 +216,11 @@ namespace StarGarner {
                 var root = JToken.Parse( content );
                 var streaming_url_list = root.Value<JArray>( "streaming_url_list" );
 
-                if (streaming_url_list == null) {
+                if (streaming_url_list == null)
                     return;
-                } else if (streaming_url_list.Count == 0) {
-                    Log.d( $"{roomName}: there is streaming_url_list, but it's empty." );
+
+                if (streaming_url_list.Count == 0) {
+                    log.d( $"{roomName}: there is streaming_url_list, but it's empty." );
                     return;
                 }
 
@@ -230,17 +234,17 @@ namespace StarGarner {
                                 src.Value<Int64>( "quality" )
                                 );
                         if (si.type != "hls") {
-                            Log.d( $"{roomName}: not hls. type={si.type}" );
+                            log.d( $"{roomName}: not hls. type={si.type}" );
                             continue;
                         }
                         list.Add( si );
                     } catch (Exception ex) {
-                        Log.e( ex, $"{roomName}: StreamingInfo parse failed." );
+                        log.e( ex, $"{roomName}: StreamingInfo parse failed." );
                     }
                 }
 
                 if (list.Count == 0) {
-                    Log.d( $"{roomName}: StreamingInfo list is empty. original size={streaming_url_list.Count}" );
+                    log.d( $"{roomName}: StreamingInfo list is empty. original size={streaming_url_list.Count}" );
                     return;
                 }
                 list.Sort();
@@ -249,7 +253,7 @@ namespace StarGarner {
 
                 var recording = hub.getRecording( roomName );
                 if (recording?.isRunning == true && recording?.url == streamUrl) {
-                    Log.d( $"{roomName}: already recording {streamUrl}" );
+                    log.d( $"{roomName}: already recording {streamUrl}" );
                     return;
                 }
 
@@ -257,29 +261,47 @@ namespace StarGarner {
                 request = new HttpRequestMessage( HttpMethod.Get, streamUrl );
                 response = await Config.httpClient.SendAsync( request ).ConfigureAwait( false );
                 var code = response.codeInt();
-                Log.d( $"{roomName}: {code} {response.ReasonPhrase} {streamUrl}" );
-                if (!response.IsSuccessStatusCode)
+                if (!response.IsSuccessStatusCode) {
+                    log.d( $"{roomName}: {code} {response.ReasonPhrase} {streamUrl}" );
                     return;
+                }
+
                 content = await response.Content.ReadAsStringAsync().ConfigureAwait( false );
                 var reLineFeed = new Regex( "[\x0d\x0a]+" );
+                String? chunk = null;
                 foreach (var a in reLineFeed.Split( content )) {
                     var line = a.Trim();
                     if (line.Length == 0 || line.StartsWith( "#" ))
                         continue;
-                    Log.d( line );
+                    log.d( line );
+                    if (chunk == null)
+                        chunk = line;
                 }
-                // 動画の開始を確認できた…ことにする。tsファイルがまだ404の場合があるが…
-
-
-
-                if (hub.isDisposed) {
-                    Log.d( $"{roomName}: hub was disposed." );
+                if (chunk == null) {
+                    log.d( $"{roomName}: missing chunk in playlsit." );
                     return;
                 }
-                Log.d( $"{roomName}: recording start!" );
+
+                if (!Uri.TryCreate( new Uri( streamUrl ), chunk, out var chunkUrl )) {
+                    log.d( $"{roomName}: can't combile chunk url. {chunk}" );
+                    return;
+                }
+                request = new HttpRequestMessage( HttpMethod.Head, chunkUrl );
+                response = await Config.httpClient.SendAsync( request ).ConfigureAwait( false );
+                code = response.codeInt();
+                if (!response.IsSuccessStatusCode) {
+                    log.d( $"{roomName}: {code} {response.ReasonPhrase} {chunkUrl}" );
+                    return;
+                }
+
+                if (hub.isDisposed) {
+                    log.d( $"{roomName}: hub was disposed." );
+                    return;
+                }
+                log.d( $"{roomName}: recording start!" );
                 hub.setRecodring( roomName, streamUrl, folder );
             } catch (Exception ex) {
-                Log.e( ex, $"{roomName}: check failed." );
+                log.e( ex, $"{roomName}: check failed." );
             }
         }
 
@@ -293,14 +315,17 @@ namespace StarGarner {
                 return;
 
             var now = UnixTime.now;
-            // 最低限10秒は待つ
-            if (now < lastCheckTime + 10000L)
-                return;
 
             var lastRecordEnd = recording?.timeExit ?? 0L;
             if (now - lastRecordEnd < 300000L) {
                 // 前回の録画が終わってから5分間は 最も短い間隔でチェックする
+                if (now < lastCheckTime + 5000L)
+                    return;
             } else {
+                // 最低限10秒は待つ
+                if (now < lastCheckTime + 10000L)
+                    return;
+
                 // 分数が0,5,10, ... に近いなら間隔を短くする
                 var dtNow = now.toDateTime();
                 var x = Math.Abs( ( dtNow.Minute * 60 + dtNow.Second ) % 300 - 30 ) / 30;
@@ -413,7 +438,7 @@ namespace StarGarner {
 
 
         // タイマーから定期的に呼ばれる
-        internal void step() 
+        internal void step()
             => roomMap.Values.ForEach( (r) => Task.Run( () => r.step( this ) ) );
 
         // 録画状態の変化をUIに通知する
@@ -424,7 +449,7 @@ namespace StarGarner {
         }
 
         // 録画対象リストを返す
-        internal List<RecordRoom> getRoomList() 
+        internal List<RecordRoom> getRoomList()
             => new List<RecordRoom>( roomMap.Values );
 
         internal void setRoomList(IEnumerable<RecordRoom>? src) {

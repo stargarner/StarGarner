@@ -22,6 +22,7 @@ using uhttpsharp.Handlers;
 
 namespace StarGarner.Util {
     internal static class Utils {
+        static readonly Log log = new Log( "Utils" );
 
         internal static SingleTask singleTask = new SingleTask();
 
@@ -32,7 +33,7 @@ namespace StarGarner.Util {
                     using var writer = new StreamWriter( fileName, false, Encoding.UTF8 );
                     writer.Write( str );
                 } catch (Exception ex) {
-                    Log.e( ex, $"{fileName} save failed." );
+                    log.e( ex, $"{fileName} save failed." );
                 }
             } );
         }
@@ -199,7 +200,7 @@ namespace StarGarner.Util {
             try {
                 return (Int32)response.StatusCode;
             } catch (Exception ex) {
-                Log.e( ex, $"HttpResponseMessage.StatusCode is not numeric. {response.StatusCode}" );
+                log.e( ex, $"HttpResponseMessage.StatusCode is not numeric. {response.StatusCode}" );
                 return -1;
             }
         }

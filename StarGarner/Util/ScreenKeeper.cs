@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace StarGarner.Util {
     internal class ScreenKeeper {
+        static readonly Log log = new Log( "ScreenKeeper" );
 
         [StructLayout( LayoutKind.Sequential )]
         struct MouseInput {
@@ -96,13 +97,13 @@ namespace StarGarner.Util {
             input.ui.Mouse.ExtraInfo = GetMessageExtraInfo();
             var rv = SendInput( 1, ref input, Marshal.SizeOf( input ) );
             if (rv != 1)
-                Log.e( $"suppressMonitorOff: SendInput failed. {rv}" );
+                log.e( $"suppressMonitorOff: SendInput failed. {rv}" );
 
 
             // モニターの電源OFFの抑止
             rv = SetThreadExecutionState( ES_DISPLAY_REQUIRED );
             if (rv != 0x80000001)
-                Log.e( $"suppressMonitorOff: SetThreadExecutionState failed. {rv}" );
+                log.e( $"suppressMonitorOff: SetThreadExecutionState failed. {rv}" );
 
         }
     }

@@ -12,6 +12,7 @@ using uhttpsharp.RequestProviders;
 namespace StarGarner {
 
     internal class MyHttpServer {
+        static readonly Log log = new Log( "MyHttpServer" );
 
         public volatile String serverStatus = "?";
         public volatile Boolean enabled = false;
@@ -39,11 +40,11 @@ namespace StarGarner {
                     try {
                         list.Add( $"\n{ip}" );
                     }catch(Exception ex) {
-                        Log.e( ex, "can't get ip address" );
+                        log.e( ex, "can't get ip address" );
                     }
                 }
             }catch(Exception ex) {
-                Log.e( ex, "getMyAddress failed." );
+                log.e( ex, "getMyAddress failed." );
             }
             return String.Join( "", list );
         }
@@ -58,17 +59,17 @@ namespace StarGarner {
             lock (this) {
                 try {
                     if (httpServer != null) {
-                        Log.d( "updateListening: dispose last server…" );
+                        log.d( "updateListening: dispose last server…" );
                         httpServer.Dispose();
                     }
                 } catch (Exception ex) {
-                    Log.e( ex, "closing failed." );
+                    log.e( ex, "closing failed." );
                 } finally {
                     httpServer = null;
                 }
 
                 if (!enabled) {
-                    Log.d( "updateListening: not enabled." );
+                    log.d( "updateListening: not enabled." );
                     setStatus( "not enabled." );
                     return;
                 }
@@ -77,7 +78,7 @@ namespace StarGarner {
                 try {
                     addr = IPAddress.Parse( listenAddr );
                 } catch (Exception ex) {
-                    Log.e( ex, "listenAddr parse error." );
+                    log.e( ex, "listenAddr parse error." );
                     setStatus( $"待機アドレスを解釈できません。\n{ex}" );
                     return;
                 }
@@ -86,13 +87,13 @@ namespace StarGarner {
                 try {
                     port = Int32.Parse( listenPort );
                 } catch (Exception ex) {
-                    Log.e( ex, "listenPort parse error." );
+                    log.e( ex, "listenPort parse error." );
                     setStatus( $"待機ポートを解釈できません。\n{ex}" );
                     return;
                 }
 
                 try {
-                    Log.d( $"updateListening: listen to {listenAddr} port {listenPort}…" );
+                    log.d( $"updateListening: listen to {listenAddr} port {listenPort}…" );
                     setStatus( "initializing…" );
 
                     var tcpListener = new TcpListener( addr, port );
@@ -109,7 +110,7 @@ namespace StarGarner {
                     httpServer.Start();
                     setStatus( $"listening {listenAddr} port {listenPort}\nmaybe your addresses are:{getMyAddress()}" );
                 } catch (Exception ex) {
-                    Log.e( ex, "can't start http server." );
+                    log.e( ex, "can't start http server." );
                     setStatus( ex.ToString() );
                 }
             }

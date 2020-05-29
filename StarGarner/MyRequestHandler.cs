@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 
 namespace StarGarner {
     public class MyRequestHandler : RequestHandler {
+        static readonly Log log = new Log( "MyRequestHandler" );
 
         // 追跡対象サイトの正規表現
         private static readonly Regex reSiteDomain = new Regex( Config.REGEX_SITE_DOMAIN, RegexOptions.IgnoreCase );
@@ -38,7 +39,7 @@ namespace StarGarner {
                 if (willCheckResource( request.Url ))
                     return new MyResourceRequestHandler( window );
             } catch (Exception ex) {
-                Log.e( ex, "GetResourceRequestHandler failed." );
+                log.e( ex, "GetResourceRequestHandler failed." );
             }
             return null;
         }

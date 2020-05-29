@@ -8,6 +8,8 @@ namespace StarGarner.Model {
 
     // garner for star or seed.
     public class Garner {
+        static readonly Log log = new Log( "Garner" );
+
         // 星 or 種
         internal readonly Boolean isSeed;
         internal readonly String itemName;
@@ -86,7 +88,7 @@ namespace StarGarner.Model {
                     lastPlayThirdLap = parseTime( Config.KEY_LAST_PLAY_THIRD_LAP );
                 }
             } catch (Exception ex) {
-                Log.e( ex, $"{itemName} load failed." );
+                log.e( ex, $"{itemName} load failed." );
             }
         }
 

@@ -14,6 +14,8 @@ using System.Threading.Tasks;
 
 namespace StarGarner {
     public class MyResourceRequestHandler : ResourceRequestHandler {
+        static readonly Log log = new Log( "MyResourceRequestHandler" );
+
         private static readonly Regex reFileNameUnsafe = new Regex( @"[\/:*?""<>|]+" );
         private static readonly Regex reExceedError = new Regex( @"無料ギフトの獲得は(\d+):(\d+)まで制限されています" );
         private static readonly Regex reLiveData = new Regex( @"<script id=""js-live-data"" data-json=""([^""]+)", RegexOptions.Singleline );
@@ -48,7 +50,7 @@ namespace StarGarner {
                 }
 
             } catch (Exception ex) {
-                Log.e( ex, "OnResourceLoadComplete failed." );
+                log.e( ex, "OnResourceLoadComplete failed." );
             }
         }
 
@@ -59,14 +61,14 @@ namespace StarGarner {
             if (contentType == null)
                 return;
 
-            // Log.d( $"OnResourceLoadComplete {request.Url} {contentType}" );
+            // log.d( $"OnResourceLoadComplete {request.Url} {contentType}" );
 
             responceLog( now, url, content );
 
             if (contentType.StartsWith( "text/html" )) {
                 // var cookie = response.Headers[ "Set-Cookie" ];
                 // if (cookie != null) {
-                //     Log.d( $"cookie={cookie}" );
+                //     log.d( $"cookie={cookie}" );
                 // }
 
                 if (content.Contains( "class=\"side-user-data-id\"" )) {
@@ -88,7 +90,7 @@ namespace StarGarner {
                             window.onGiftCount( now, list, url );
                         }
                     } catch (Exception ex) {
-                        Log.e( ex, $"parse error. {url} {src}" );
+                        log.e( ex, $"parse error. {url} {src}" );
                     }
                 }
 
@@ -109,7 +111,7 @@ namespace StarGarner {
                     }
                     // 既に取得済みの部屋だと  {"is_login":true,"online_user_num":12,"live_watch_incentive":{}} などが返る
                     // 特に処理はせず、タイムアウト扱いにする
-                    Log.e( $"current_user API returns unknown event: {content}" );
+                    log.e( $"current_user API returns unknown event: {content}" );
                 }
             }
         }
@@ -124,7 +126,7 @@ namespace StarGarner {
                 window.onGiftCount( now, list, $"{a}{url}" );
                 return list;
             } catch (Exception ex) {
-                Log.e( ex, $"parse error. {url} {content}" );
+                log.e( ex, $"parse error. {url} {content}" );
                 return null;
             }
         }
@@ -139,7 +141,7 @@ namespace StarGarner {
                     using var writer = new StreamWriter( $"{dir}/{ now.formatFileTime()}-{reFileNameUnsafe.Replace( url, "-" )}", false, Encoding.UTF8 );
                     writer.Write( data );
                 } catch (Exception ex) {
-                    Log.e( ex, "responceLog() failed." );
+                    log.e( ex, "responceLog() failed." );
                 }
             } );
         }

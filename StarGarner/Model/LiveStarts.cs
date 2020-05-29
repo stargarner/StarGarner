@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 namespace StarGarner.Model {
 
     public class LiveStarts {
+        static readonly Log log = new Log( "LiveStarts" );
 
         // 配信開始時刻と3周目オフセットのペア
         public class TimeAndOffset {
@@ -66,7 +67,7 @@ namespace StarGarner.Model {
                         }
                     }
                 } catch (Exception ex) {
-                    Log.e( ex, "StartTimeItem.parse failed." );
+                    log.e( ex, "StartTimeItem.parse failed." );
                 }
                 return null;
             }

@@ -9,11 +9,13 @@ namespace StarGarner {
     /// Interaction logic for App.xaml
     /// </summary>
     public partial class App : Application {
+        static readonly Log log = new Log( "App" );
+
         private static void handleException(Exception? ex, String caughtBy) {
             if (ex == null) {
-                Log.e( $"caught by {caughtBy}, but Exception is null!!" );
+                log.e( $"caught by {caughtBy}, but Exception is null!!" );
             } else {
-                Log.e( ex, $"(caught by{caughtBy})" );
+                log.e( ex, $"(caught by{caughtBy})" );
             }
             Environment.Exit( 1 );
         }

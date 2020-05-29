@@ -9,6 +9,8 @@ using System.Threading.Tasks;
 namespace StarGarner {
     // onlive room list
     class OnliveChecker {
+        static readonly Log log = new Log( "OnliveChecker" );
+
         public volatile List<Room> starRooms = new List<Room>();
         public volatile List<Room> seedRooms = new List<Room>();
 
@@ -52,11 +54,11 @@ namespace StarGarner {
                     var list = MyResourceRequestHandler.handleCurrentUser( window, now, url, content, fromChecker: true );
                     if (list == null) {
                         // 配信してなかった…
-                        Log.e( $"OnliveChecker.checkGiftCount: {itemName} gift list is null! (parse error)" );
+                        log.e( $"checkGiftCount: {itemName} gift list is null! (parse error)" );
                         break;
                     } else if (list.Count == 0) {
                         // 配信してなかった…
-                        Log.e( $"OnliveChecker.checkGiftCount: {itemName} gift list is empty! (not in live) retry other room…" );
+                        log.e( $"checkGiftCount: {itemName} gift list is empty! (not in live) retry other room…" );
                         // 他の部屋でリトライしたい
                     } else {
                         break;
@@ -64,14 +66,14 @@ namespace StarGarner {
 
                     // 一定回数以上のリトライは行わない
                     if (++tryCount >= 2) {
-                        Log.e( $"OnliveChecker.checkGiftCount: {itemName} too many retry." );
+                        log.e( $"checkGiftCount: {itemName} too many retry." );
                         break;
                     }
                     await Task.Delay( 3000 );
                     continue;
                 }
             } catch (Exception ex) {
-                Log.e( ex, "checkGiftCount {itemName} failed." );
+                log.e( ex, $"checkGiftCount: {itemName} failed." );
             }
         }
 
@@ -139,7 +141,7 @@ namespace StarGarner {
                         }
                     }
                 }
-                Log.d( $"onLiveChecker: starRoom={tmpStarRooms.Count},seedRoom={tmpSeedRooms.Count}" );
+                log.d( $"checkOnLive: starRoom={tmpStarRooms.Count},seedRoom={tmpSeedRooms.Count}" );
 
                 static List<Room> mapToList(Dictionary<String, Room> map) {
                     var dst = new List<Room>();
@@ -154,7 +156,7 @@ namespace StarGarner {
                 runGifCount();
 
             } catch (Exception ex) {
-                Log.e( ex, "load failed." );
+                log.e( ex, "load failed." );
             }
         }
 

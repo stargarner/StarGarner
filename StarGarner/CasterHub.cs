@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 namespace StarGarner {
 
     internal class CastRoom : IComparable<CastRoom>, IDisposable {
+        readonly Log log;
 
         internal readonly String roomName;
         internal Int64 roomId;
@@ -32,11 +33,13 @@ namespace StarGarner {
         internal CastRoom(String roomName, Int64 roomId) {
             this.roomName = roomName;
             this.roomId = roomId;
+            this.log = new Log( $"CastRoom {roomName}" );
         }
 
         internal CastRoom(CastRoom src) {
             this.roomName = src.roomName;
             this.roomId = src.roomId;
+            this.log = new Log( $"CastRoom {roomName}:" );
         }
 
         public Int32 CompareTo(CastRoom other)
@@ -58,7 +61,6 @@ namespace StarGarner {
         volatile String httpError = "";
         volatile String countStr = "";
 
-
         public String Text {
             get {
                 var recordStr = isCastingUi ? "(配信中)" : "";
@@ -77,7 +79,7 @@ namespace StarGarner {
         }
 
         public void Dispose() {
-            Log.d( $"{roomName} Dispose." );
+            log.d( "Dispose." );
             canceller.Cancel();
         }
 
@@ -90,27 +92,28 @@ namespace StarGarner {
             if (lastPageOpen - lastCountStart < UnixTime.hour1) {
                 countStr = "カウント(前回から1時間経過してない)";
                 hub.showStatus();
-                Log.d( $"{roomName}: dont count due to rapidly open pages." );
+                log.d( "dont count due to rapidly open pages." );
                 return;
             }
             lastCountStart = lastPageOpen;
 
-            countStr = $"カウント開始";
+            countStr = "カウント開始";
             hub.showStatus();
 
-            for (var i = 0; i <= 50; ++i) {
+            for (var count = 0; count <= 50; ++count) {
                 for (var nTry = 4; nTry >= 1; --nTry) {
-                    if (isDisposed) {
-                        Log.d( $"{roomName}: count cancelled." );
-                        return;
-                    }
                     try {
+                        if (isDisposed) {
+                            log.d( "count cancelled." );
+                            return;
+                        }
+
                         var parameters = new Dictionary<String, String>(){
-                        { "live_id", liveId },
-                        { "comment", i.ToString()  },
-                        { "is_delay", "0" },
-                        {"csrf_token", csrfToken }
-                    };
+                            { "live_id", liveId },
+                            { "comment", count.ToString()  },
+                            { "is_delay", "0" },
+                            {"csrf_token", csrfToken }
+                        };
                         var url = $"{Config.URL_TOP}api/live/post_live_comment";
                         var request = new HttpRequestMessage( HttpMethod.Post, url );
                         request.Headers.Add( "Cookie", hub.cookie );
@@ -118,23 +121,24 @@ namespace StarGarner {
                         request.Content = new FormUrlEncodedContent( parameters );
                         //
                         var response = await Config.httpClient.SendAsync( request, canceller.Token ).ConfigureAwait( false );
-                        Log.d( $"{roomName}: count {i} HTTP {response.ReasonPhrase}" );
+                        var code = response.codeInt();
+                        log.d( $"count {count} HTTP {code} {response.ReasonPhrase}" );
                         await delayEx( UnixTime.second1 * 2 );
 
                         if (response.IsSuccessStatusCode) {
-                            countStr = $"カウント{i} 成功";
+                            countStr = $"カウント{count} 成功";
                             hub.showStatus();
                             break;
                         }
 
                         if (nTry == 1) {
-                            Log.d( $"{roomName}: count {i} too many retry. stop counting…" );
-                            countStr = $"カウント{i} 中断 HTTP {response.ReasonPhrase}";
+                            log.d( $"count {count} too many retry. stop counting…" );
+                            countStr = $"カウント{count} 中断 HTTP {response.ReasonPhrase}";
                             hub.showStatus();
                             return;
                         }
                     } catch (Exception ex) {
-                        countStr = $"カウント{i} {ex}";
+                        countStr = $"カウント{count} {ex}";
                         hub.showStatus();
                         return;
                     }
@@ -145,7 +149,7 @@ namespace StarGarner {
         internal async Task check(CasterHub hub) {
 
             if (httpErrorCode >= 400 && httpErrorCode < 500) {
-                Log.e( $"{roomName} httpErrorCode={httpErrorCode}" );
+                log.e( $"httpErrorCode={httpErrorCode}" );
                 return;
             }
 
@@ -155,11 +159,13 @@ namespace StarGarner {
                 return;
             lastCheckTime = now;
 
-            Log.d( $"{roomName} check start." );
+            log.d( "check start." );
 
             var csrfToken = "";
             var liveId = "";
             var hasLive = false;
+            var castTotal = 0;
+
             while (!isDisposed) {
                 try {
                     var list = new List<JObject>();
@@ -175,13 +181,13 @@ namespace StarGarner {
                         var response = await Config.httpClient.SendAsync( request, canceller.Token ).ConfigureAwait( false );
                         timePageOpen = UnixTime.now;
                         var code = response.codeInt();
-                        Log.d( $"{roomName}: room {code} {response.ReasonPhrase}" );
                         if (!response.IsSuccessStatusCode) {
+                            log.d( $"HTTP {code} {response.ReasonPhrase} {pageUrl}" );
                             httpErrorCode = code;
                             httpError = $"HTTP {code} {response.ReasonPhrase}";
                             hub.showStatus();
                             if (code >= 400 && code < 500) {
-                                Log.d( $"{roomName}: shoud not retry for error {code}." );
+                                log.d( $"don't retry for error {code}." );
                                 break;
                             }
                             await delayEx( UnixTime.second1 * 10L );
@@ -194,25 +200,25 @@ namespace StarGarner {
 
                         var json = reInitialData.matchOrNull( content )?.Groups[ 1 ].Value.decodeEntity();
                         if (json == null) {
-                            Log.e( $"{roomName}: missing jsinitialData. (maybe not in live)." );
+                            log.e( "missing jsinitialData. (maybe not in live)." );
                             break;
                         }
                         var jsinitialData = JToken.Parse( json );
                         csrfToken = jsinitialData.Value<String>( "csrfToken" ) ?? "";
                         liveId = jsinitialData.Value<String>( "liveId" ) ?? "";
                         if (csrfToken == "" || liveId == "") {
-                            Log.e( $"{roomName}: missing csrfToken or liveId in jsinitialData. (maybe not in live)." );
+                            log.e( "missing csrfToken or liveId in jsinitialData. (maybe not in live)." );
                             break;
                         }
                         //
                         json = reLiveData.matchOrNull( content )?.Groups[ 1 ].Value.decodeEntity();
                         if (json == null) {
-                            Log.d( $"{roomName}: missing jsLiveData. (maybe not in live)." );
+                            log.d( "missing jsLiveData. (maybe not in live)." );
                             break;
                         }
                         var giftList = JToken.Parse( json ).Value<JArray>( "gift_list" );
                         if (giftList == null) {
-                            Log.d( $"{roomName}: missing giftList." );
+                            log.d( "missing giftList." );
                             break;
                         }
 
@@ -229,14 +235,14 @@ namespace StarGarner {
                         var response = await Config.httpClient.SendAsync( request, canceller.Token ).ConfigureAwait( false );
                         timePageOpen = UnixTime.now;
                         var code = response.codeInt();
-                        Log.d( $"{roomName}: current_user {code} {response.ReasonPhrase}" );
 
                         if (!response.IsSuccessStatusCode) {
+                            log.d( $"HTTP {code} {response.ReasonPhrase} {pageUrl}" );
                             httpErrorCode = code;
                             httpError = $"HTTP {code} {response.ReasonPhrase}";
                             hub.showStatus();
                             if (code >= 400 && code < 500) {
-                                Log.d( $"{roomName}: shoud not retry for error {code}." );
+                                log.d( $"don't retry for error {code}." );
                                 break;
                             }
                             await delayEx( UnixTime.second1 * 10L );
@@ -254,18 +260,18 @@ namespace StarGarner {
                                 list.Add( gift );
                             }
                         } catch (Exception ex) {
-                            Log.e( ex, $"{roomName}: gift list is null. (parse error)" );
+                            log.e( ex, "gift list is null. (parse error)" );
                             break;
                         }
                     }
 
                     if (list.Count == 0) {
                         // 配信してなかった…
-                        Log.d( $"{roomName}: gift list is empty. (not in live)" );
+                        log.d( "gift list is empty. (not in live)" );
                         break;
                     }
 
-                    if ( !hasLive ) {
+                    if (!hasLive) {
                         var dontWait = Task.Run( () => count( hub, liveId, csrfToken, timePageOpen ) );
                     }
 
@@ -289,6 +295,8 @@ namespace StarGarner {
                                 continue;
 
                             var step = Math.Min( 10, freeNum );
+                            log.d( $"gifting giftId={giftId}, num={step}" );
+
                             var parameters = new Dictionary<String, String>(){
                                 { "gift_id", giftId.ToString() },
                                 { "live_id", liveId },
@@ -303,12 +311,10 @@ namespace StarGarner {
                             //
                             var response = await Config.httpClient.SendAsync( request, canceller.Token ).ConfigureAwait( false );
                             var code = response.codeInt();
-                            Log.d( $"{roomName}: gifting giftId={giftId} num={step}, HTTP {code} {response.ReasonPhrase}" );
                             if (!response.IsSuccessStatusCode) {
-                                Log.d( $"{roomName}: request failed." );
+                                log.d( $"HTTP {code} {response.ReasonPhrase} {url}" );
                                 break;
                             }
-
                             castCount += step;
                             freeNum -= step;
                             ( (JObject)gift )[ "free_num" ] = freeNum;
@@ -316,8 +322,9 @@ namespace StarGarner {
 
                         if (castCount == 0)
                             break;
+                        castTotal += castCount;
 
-                        Log.d( $"{roomName} castCount={castCount}" );
+                        log.d( $"castCount={castCount}, total={castTotal}" );
 
                         hub.mainWindow.onGiftCount( UnixTime.now, list, pageUrl );
                         await delayEx( UnixTime.second1 * 2L );
@@ -327,14 +334,14 @@ namespace StarGarner {
                     // (自動取得と足並みを揃える)
                     var remain = UnixTime.second1 * 31 + timePageOpen - UnixTime.now;
                     if (remain > 0L) {
-                        Log.d( $"{roomName}: wait {remain}ms" );
+                        log.d( $"wait {remain}ms" );
                         await delayEx( remain );
                     }
                 } catch (TaskCanceledException ex) {
-                    Log.e( ex, $"{roomName}: task was cancelled." );
+                    log.e( ex, "task was cancelled." );
                     break;
                 } catch (Exception ex) {
-                    Log.e( ex, $"{roomName}: CastRoom.check failed." );
+                    log.e( ex, "check() failed." );
                     await delayEx( UnixTime.second1 * 60L );
                 }
             }
@@ -343,7 +350,7 @@ namespace StarGarner {
             hub.showStatus();
 
             if (hasLive)
-                Log.d( $"{roomName} CastRoom.check() end." );
+                log.d( "check() end." );
         }
 
         internal static async Task<CastRoom> find(String roomName) {

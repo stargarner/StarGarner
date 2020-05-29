@@ -20,6 +20,7 @@ namespace StarGarner {
 
     // main window and main logic.
     public partial class MainWindow : Window {
+        static readonly Log log = new Log( "MainWindow" );
 
         // ギフトの取得状態を保持するクラス。星と種の2つ用意する
         private readonly Garner starGarner = new Garner( false );
@@ -79,7 +80,7 @@ namespace StarGarner {
         // 部屋を閉じる
         private void closeRoom(String reason, Boolean dontResetForceOpen = false) {
             var room = currentRoom;
-            Log.d( $"部屋を閉じる理由: {reason} {room?.roomUrlKey}" );
+            log.d( $"部屋を閉じる理由: {reason} {room?.roomUrlKey}" );
 
             if (room != null && !dontResetForceOpen)
                 garnerFor( room ).forceOpenReason = null;
@@ -93,7 +94,7 @@ namespace StarGarner {
         internal Boolean openAnyRoom(Garner garner, List<Room>? rooms, Int64 now, String openReason) {
 
             void openRoomDetail(Room room, Int64 now, String openReason) {
-                Log.d( $"部屋を開く理由: {openReason} {room.roomUrlKey}" );
+                log.d( $"部屋を開く理由: {openReason} {room.roomUrlKey}" );
 
                 lastOpenRoom = now;
                 lock (lastOpenList) {
@@ -140,7 +141,7 @@ namespace StarGarner {
             }
 
             if (caller != "timer")
-                Log.d( $"caller={caller}" );
+                log.d( $"caller={caller}" );
 
             var now = UnixTime.now;
 
@@ -244,7 +245,7 @@ namespace StarGarner {
                     lastStatus = statusB;
                     foreach (var line in statusB.ToString().Split( "\n" )) {
                         if (line.Length > 0)
-                            Log.d( $"status: {line}" );
+                            log.d( $"status: {line}" );
                     }
                 }
             }
@@ -270,7 +271,7 @@ namespace StarGarner {
                     }
                 }
             } catch (Exception ex) {
-                Log.e( ex, "onGiftGet failed." );
+                log.e( ex, "onGiftGet failed." );
             }
         } );
 
@@ -286,7 +287,7 @@ namespace StarGarner {
                 if (currentRoom != null)
                     closeRoom( "配信中ではなかった", dontResetForceOpen: true );
             } catch (Exception ex) {
-                Log.e( ex, "onNotLive failed." );
+                log.e( ex, "onNotLive failed." );
             }
         } );
 
@@ -316,7 +317,7 @@ namespace StarGarner {
                 if (changed != 0)
                     step( $"onGiftCount {caller}" );
             } catch (Exception ex) {
-                Log.e( ex, "onGiftCount failed." );
+                log.e( ex, "onGiftCount failed." );
             }
         } );
 
@@ -329,7 +330,7 @@ namespace StarGarner {
                 if (room == null)
                     return;
                 var garner = garnerFor( room );
-                Log.d( $"{garner.itemName}を取得。{room.roomUrlKey}" );
+                log.d( $"{garner.itemName}を取得。{room.roomUrlKey}" );
 
                 garner.addLastRoom( room );
 
@@ -337,11 +338,11 @@ namespace StarGarner {
 
                 notificationSound.play( garner.soundActor, NotificationSound.counts[ Math.Min( 10, x ) ] );
 
-                Log.d( $"取得にかかった時間 {( now - lastOpenRoom ).formatDuration()}" );
+                log.d( $"取得にかかった時間 {( now - lastOpenRoom ).formatDuration()}" );
                 closeRoom( $"{garner.itemName} ギフトを取得しました" );
                 step( "got gifts" );
             } catch (Exception ex) {
-                Log.e( ex, "onGiftGet failed." );
+                log.e( ex, "onGiftGet failed." );
             }
         } );
 
@@ -375,7 +376,7 @@ namespace StarGarner {
                 closeRoom( $"{garner.itemName} 制限超過エラー" );
                 step( "got exceed error" );
             } catch (Exception ex) {
-                Log.e( ex, "onExceedError failed." );
+                log.e( ex, "onExceedError failed." );
             }
         } );
 
@@ -416,7 +417,7 @@ namespace StarGarner {
                 try {
                     root = JToken.Parse( Encoding.UTF8.GetString( httpContext.Request.Post.Raw ) );
                 } catch (Exception ex) {
-                    Log.e( ex, "parse error." );
+                    log.e( ex, "parse error." );
                     httpContext.Response = newResponse( "can't parse request body", HttpResponseCode.BadRequest );
                     return;
                 }
@@ -455,7 +456,7 @@ namespace StarGarner {
                 try {
                     root = JToken.Parse( Encoding.UTF8.GetString( httpContext.Request.Post.Raw ) );
                 } catch (Exception ex) {
-                    Log.e( ex, "parse error." );
+                    log.e( ex, "parse error." );
                     httpContext.Response = newResponse( "can't parse request body", HttpResponseCode.BadRequest );
                     return;
                 }
@@ -540,7 +541,7 @@ namespace StarGarner {
                     casterHub.load( ov );
 
             } catch (Exception ex) {
-                Log.e( ex, "loadUI failed." );
+                log.e( ex, "loadUI failed." );
             }
         }
 
@@ -585,7 +586,7 @@ namespace StarGarner {
 
                 garner.save();
             } catch (Exception ex) {
-                Log.e( ex, "saveGarnerSetting failed." );
+                log.e( ex, "saveGarnerSetting failed." );
             }
         } );
 
@@ -596,7 +597,7 @@ namespace StarGarner {
 
                 saveUI();
             } catch (Exception ex) {
-                Log.e( ex, "saveOtherSetting failed." );
+                log.e( ex, "saveOtherSetting failed." );
             }
         } );
 

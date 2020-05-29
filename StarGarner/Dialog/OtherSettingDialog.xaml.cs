@@ -17,6 +17,7 @@ using System.Windows.Threading;
 namespace StarGarner.Dialog {
 
     public partial class OtherSettingDialog : Window {
+        static readonly Log log = new Log( "OtherSettingDialog" );
 
         public Boolean isClosed = false;
 
@@ -128,7 +129,7 @@ namespace StarGarner.Dialog {
                     updateApplyButton();
                     return null;
                 } catch (Exception ex) {
-                    Log.e( ex, "addRecord failed." );
+                    log.e( ex, "addRecord failed." );
                     return ex.Message;
                 }
             }
@@ -223,7 +224,7 @@ namespace StarGarner.Dialog {
                     updateApplyButton();
                     return null;
                 } catch (Exception ex) {
-                    Log.e( ex, "addCast failed." );
+                    log.e( ex, "addCast failed." );
                     return ex.Message;
                 }
             }
@@ -277,7 +278,7 @@ namespace StarGarner.Dialog {
                     dst.Append( tmp, 0, delta );
                 }
             } catch (Exception ex) {
-                Log.e( ex, "readStream failed." );
+                log.e( ex, "readStream failed." );
             }
         }
 
@@ -323,7 +324,7 @@ namespace StarGarner.Dialog {
                 tbRecordFfmpegPathError.Foreground = p.ExitCode == 0 ? Brushes.Blue : Brushes.Red;
                 tbRecordFfmpegPathError.textOrGone( content );
             } catch (Exception ex) {
-                Log.e( ex, "checkRecordFfmpegPath() failed." );
+                log.e( ex, "checkRecordFfmpegPath() failed." );
                 tbRecordFfmpegPathError.Foreground = Brushes.Red;
                 tbRecordFfmpegPathError.textOrGone( ex.Message );
             }
@@ -365,7 +366,7 @@ namespace StarGarner.Dialog {
                 var error = await Task.Run( () => checkDirectory( path ) );
                 tbRecordSaveDirError.textOrGone( error ?? "" );
             } catch (Exception ex) {
-                Log.e( ex, "checkRecordSaveDir() failed." );
+                log.e( ex, "checkRecordSaveDir() failed." );
                 tbRecordSaveDirError.textOrGone( ex.Message ?? "checkRecordSaveDir() failed." );
             }
         } );
