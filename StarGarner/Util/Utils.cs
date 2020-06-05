@@ -75,14 +75,29 @@ namespace StarGarner.Util {
             return d;
         }
 
-        public static V getOrNull<K, V>(this ConcurrentDictionary<K, V> map, K key) {
+        public static V getOrNull<K, V>(this ConcurrentDictionary<K, V> map, K key) where V : class {
             map.TryGetValue( key, out var v );
             return v;
         }
 
-        public static V removeOrNull<K, V>(this ConcurrentDictionary<K, V> map, K key) {
+        public static V getOrDefault<K, V>(this ConcurrentDictionary<K, V> map, K key, V defVal = default) where V : struct {
+            if (map.TryGetValue( key, out var v )) {
+                return v;
+            } else {
+                return defVal;
+            }
+        }
+
+        public static V removeOrNull<K, V>(this ConcurrentDictionary<K, V> map, K key) where V : class {
             map.TryRemove( key, out var v );
             return v;
+        }
+        public static V removeOrDefault<K, V>(this ConcurrentDictionary<K, V> map, K key, V defVal = default) where V : struct {
+            if (map.TryRemove( key, out var v )) {
+                return v;
+            } else {
+                return defVal;
+            }
         }
 
         public static void textOrGone(this TextBlock tb, String str) {
@@ -203,6 +218,21 @@ namespace StarGarner.Util {
                 log.e( ex, $"HttpResponseMessage.StatusCode is not numeric. {response.StatusCode}" );
                 return -1;
             }
+        }
+
+
+        public static ConcurrentDictionary<Int32, Int32> parseGiftCount(this IEnumerable<JToken> src) {
+            var dst = new ConcurrentDictionary<Int32, Int32>();
+            foreach (var gift in src) {
+                var giftId = gift.Value<Int32?>( "gift_id" ) ?? -1;
+                var freeNum = gift.Value<Int32?>( "free_num" ) ?? -1;
+                // htmlから読んだ時だけある var giftName = gift.Value<String>( "gift_name" );
+
+                if (giftId < 0 || freeNum < 0)
+                    continue;
+                dst[ giftId ] = freeNum;
+            }
+            return dst;
         }
     }
 }

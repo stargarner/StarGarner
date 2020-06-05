@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json.Linq;
+using StarGarner.Model;
 using StarGarner.Util;
 using System;
 using System.Collections.Concurrent;
@@ -168,7 +169,7 @@ namespace StarGarner {
 
             while (!isDisposed) {
                 try {
-                    var list = new List<JObject>();
+                    ConcurrentDictionary<Int32, Int32> giftMap;
 
                     String pageUrl;
                     Int64 timePageOpen;
@@ -216,15 +217,13 @@ namespace StarGarner {
                             log.d( "missing jsLiveData. (maybe not in live)." );
                             break;
                         }
-                        var giftList = JToken.Parse( json ).Value<JArray>( "gift_list" );
-                        if (giftList == null) {
-                            log.d( "missing giftList." );
+                        try {
+                            giftMap = JToken.Parse( json ).Value<JArray>( "gift_list" ).parseGiftCount();
+                        } catch (Exception ex) {
+                            log.e( ex, "gift list is null. (parse error)" );
                             break;
                         }
 
-                        foreach (JObject gift in giftList) {
-                            list.Add( gift );
-                        }
                     } else {
                         // 2回目以降は current_user APIを読む
                         pageUrl = $"{Config.URL_TOP}api/live/current_user?room_id={ roomId }&_={UnixTime.now / 1000L}";
@@ -256,16 +255,14 @@ namespace StarGarner {
                         var content = await response.Content.ReadAsStringAsync().ConfigureAwait( false );
                         MyResourceRequestHandler.responceLog( UnixTime.now, url, content );
                         try {
-                            foreach (JObject gift in JToken.Parse( content ).Value<JObject>( "gift_list" ).Value<JArray>( "normal" )) {
-                                list.Add( gift );
-                            }
+                            giftMap = JToken.Parse( content ).Value<JObject>( "gift_list" ).Value<JArray>( "normal" ).parseGiftCount();
                         } catch (Exception ex) {
                             log.e( ex, "gift list is null. (parse error)" );
                             break;
                         }
                     }
 
-                    if (list.Count == 0) {
+                    if (giftMap.Count == 0) {
                         // 配信してなかった…
                         log.d( "gift list is empty. (not in live)" );
                         break;
@@ -274,20 +271,19 @@ namespace StarGarner {
                     if (!hasLive) {
                         var dontWait = Task.Run( () => count( hub, liveId, csrfToken, timePageOpen ) );
                     }
-
                     hasLive = true;
+
+                    var giftIds = giftMap.Keys.ToArray();
+                    Array.Sort( giftIds );
 
                     isCasting = true;
                     hub.showStatus();
-                    hub.mainWindow.onGiftCount( UnixTime.now, list, pageUrl );
-
-                    list.Sort( (a, b) => a.Value<Int32>( "gift_id" ).CompareTo( b.Value<Int32>( "gift_id" ) ) );
+                    hub.mainWindow.onGiftCount( UnixTime.now, giftMap, pageUrl );
 
                     while (true) {
                         var castCount = 0;
-                        foreach (var gift in list) {
-                            var giftId = gift.Value<Int32?>( "gift_id" ) ?? -1;
-                            var freeNum = gift.Value<Int32?>( "free_num" ) ?? -1;
+                        foreach (var giftId in giftIds) {
+                            var freeNum = giftMap.getOrDefault( giftId, -1 );
                             if (giftId < 0 || freeNum <= 0)
                                 continue;
 
@@ -317,7 +313,7 @@ namespace StarGarner {
                             }
                             castCount += step;
                             freeNum -= step;
-                            ( (JObject)gift )[ "free_num" ] = freeNum;
+                            giftMap[ giftId ] = freeNum;
                         }
 
                         if (castCount == 0)
@@ -326,7 +322,7 @@ namespace StarGarner {
 
                         log.d( $"castCount={castCount}, total={castTotal}" );
 
-                        hub.mainWindow.onGiftCount( UnixTime.now, list, pageUrl );
+                        hub.mainWindow.onGiftCount( UnixTime.now, giftMap, pageUrl );
                         await delayEx( UnixTime.second1 * 2L );
                     }
 

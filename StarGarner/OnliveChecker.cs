@@ -51,12 +51,12 @@ namespace StarGarner {
                     now = UnixTime.now;
                     var content = await response.Content.ReadAsStringAsync().ConfigureAwait( false );
                     MyResourceRequestHandler.responceLog( UnixTime.now, url, content );
-                    var list = MyResourceRequestHandler.handleCurrentUser( window, now, url, content, fromChecker: true );
-                    if (list == null) {
+                    var giftMap = MyResourceRequestHandler.handleCurrentUser( window, now, url, content, fromChecker: true );
+                    if (giftMap == null) {
                         // 配信してなかった…
                         log.e( $"checkGiftCount: {itemName} gift list is null! (parse error)" );
                         break;
-                    } else if (list.Count == 0) {
+                    } else if (giftMap.Count == 0) {
                         // 配信してなかった…
                         log.e( $"checkGiftCount: {itemName} gift list is empty! (not in live) retry other room…" );
                         // 他の部屋でリトライしたい

@@ -6,6 +6,7 @@ using StarGarner.Dialog;
 using StarGarner.Model;
 using StarGarner.Util;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -291,7 +292,9 @@ namespace StarGarner {
             }
         } );
 
-        public void onGiftCount(Int64 now, List<JObject> gifts, String caller) => Dispatcher.BeginInvoke( () => {
+
+
+        public void onGiftCount(Int64 now, ConcurrentDictionary<Int32,Int32> gifts, String caller) => Dispatcher.BeginInvoke( () => {
             try {
                 if (isClosed)
                     return;
@@ -299,9 +302,8 @@ namespace StarGarner {
                 var tmpStarCounts = new Dictionary<Int32, Int32>();
                 var tmpSeedCounts = new Dictionary<Int32, Int32>();
                 foreach (var gift in gifts) {
-                    var giftId = gift.Value<Int32?>( "gift_id" ) ?? -1;
-                    var freeNum = gift.Value<Int32?>( "free_num" ) ?? -1;
-                    // htmlから読んだ時だけある var giftName = gift.Value<String>( "gift_name" );
+                    var giftId = gift.Key;
+                    var freeNum = gift.Value;
                     if (giftId < 0 || freeNum < 0)
                         continue;
 

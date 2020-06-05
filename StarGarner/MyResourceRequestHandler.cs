@@ -2,8 +2,10 @@
 using CefSharp.Handler;
 using CefSharp.ResponseFilter;
 using Newtonsoft.Json.Linq;
+using StarGarner.Model;
 using StarGarner.Util;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.IO;
@@ -80,14 +82,11 @@ namespace StarGarner {
                 var src = reLiveData.matchOrNull( content )?.Groups[ 1 ].Value.decodeEntity();
                 if (src != null) {
                     try {
-                        var list = new List<JObject>();
-                        foreach (JObject gift in JToken.Parse( src ).Value<JArray>( "gift_list" )) {
-                            list.Add( gift );
-                        }
-                        if (list.Count == 0) {
+                        var giftMap = JToken.Parse( src ).Value<JArray>( "gift_list" ).parseGiftCount();
+                        if (giftMap.Count == 0) {
                             window.onNotLive();
                         } else {
-                            window.onGiftCount( now, list, url );
+                            window.onGiftCount( now, giftMap, url );
                         }
                     } catch (Exception ex) {
                         log.e( ex, $"parse error. {url} {src}" );
@@ -116,15 +115,12 @@ namespace StarGarner {
             }
         }
 
-        internal static List<JObject>? handleCurrentUser(MainWindow window, Int64 now, String url, String content, Boolean fromChecker = false) {
+        internal static ConcurrentDictionary<Int32,Int32>? handleCurrentUser(MainWindow window, Int64 now, String url, String content, Boolean fromChecker = false) {
             try {
-                var list = new List<JObject>();
-                foreach (JObject gift in JToken.Parse( content ).Value<JObject>( "gift_list" ).Value<JArray>( "normal" )) {
-                    list.Add( gift );
-                }
+                var giftMap = JToken.Parse( content ).Value<JObject>( "gift_list" ).Value<JArray>( "normal" ).parseGiftCount();
                 var a = fromChecker ? "fromChecker, " : "";
-                window.onGiftCount( now, list, $"{a}{url}" );
-                return list;
+                window.onGiftCount( now, giftMap, $"{a}{url}" );
+                return giftMap;
             } catch (Exception ex) {
                 log.e( ex, $"parse error. {url} {content}" );
                 return null;

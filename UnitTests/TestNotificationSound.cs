@@ -5,9 +5,10 @@ using System.Threading;
 namespace StarGarner {
     [TestClass]
     public class TestNotificationSound {
+        static readonly Log log = new Log( "TestNotificationSound" );
         [TestMethod]
         public void TestMethod1() {
-            Log.d( "test start" );
+            log.d( "test start" );
             {
                 var actor = "sora";
                 using var notificationSound = new NotificationSound();
@@ -19,12 +20,12 @@ namespace StarGarner {
                     Thread.Sleep( 1000 );
                 }
             }
-            Log.d( "test end" );
+            log.d( "test end" );
         }
 
         [TestMethod]
         public void TestMethod2() {
-            Log.d( "test start" );
+            log.d( "test start" );
             {
                 var actor = "akane";
                 using var notificationSound = new NotificationSound();
@@ -33,7 +34,7 @@ namespace StarGarner {
                 }
                 Thread.Sleep( 5000 );
             }
-            Log.d( "test end" );
+            log.d( "test end" );
         }
 
         [TestMethod]
@@ -44,7 +45,7 @@ namespace StarGarner {
                         continue;
                     var file = NotificationSound.getSoundFile( actor, soundName );
                     Assert.IsNotNull( file );
-                    Log.e( $"file={file}" );
+                    log.e( $"file={file}" );
                 }
             }
         }
